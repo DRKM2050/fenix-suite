@@ -131,5 +131,11 @@ contextBridge.exposeInMainWorld('api', {
   app: {
     relaunch: () => ipcRenderer.invoke('app:relaunch'),
     forceFocus: () => ipcRenderer.send('app:force-focus')
+  },
+
+  // Diálogos nativos síncronos de sistema (evitan pérdida de foco)
+  dialog: {
+    alert: (message) => ipcRenderer.sendSync('dialog:alert', message),
+    confirm: (message) => ipcRenderer.sendSync('dialog:confirm', message)
   }
 });

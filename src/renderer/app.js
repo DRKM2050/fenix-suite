@@ -1,46 +1,21 @@
-// Sobrescribir alert y confirm para corregir el bug de pérdida de foco de Electron en Windows
+// Sobrescribir alert y confirm para corregir el bug de pérdida de foco y corregir el título "fnx-admin"
 const _originalAlert = window.alert;
 window.alert = function(message) {
-  _originalAlert(message);
-  setTimeout(() => {
-    try {
-      window.api.app.forceFocus();
-    } catch(e) {}
-    window.focus();
-    if (document.activeElement && document.activeElement !== document.body) {
-      document.activeElement.blur();
-    }
-    document.body.focus();
-  }, 50);
+  if (window.api && window.api.dialog && window.api.dialog.alert) {
+    window.api.dialog.alert(message);
+  } else {
+    _originalAlert(message);
+  }
 };
 
 const _originalConfirm = window.confirm;
 window.confirm = function(message) {
-  const res = _originalConfirm(message);
-  setTimeout(() => {
-    try {
-      window.api.app.forceFocus();
-    } catch(e) {}
-    window.focus();
-    if (document.activeElement && document.activeElement !== document.body) {
-      document.activeElement.blur();
-    }
-    document.body.focus();
-  }, 50);
-  return res;
-};
-
-// Escuchador global preventivo para obligar el foco en cualquier input/textarea/select al hacer click en Windows
-document.addEventListener('click', (e) => {
-  const tag = e.target && e.target.tagName;
-  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') {
-    try {
-      e.target.focus();
-    } catch(err) {
-      console.error("Error al forzar foco en elemento clickeado:", err);
-    }
+  if (window.api && window.api.dialog && window.api.dialog.confirm) {
+    return window.api.dialog.confirm(message);
+  } else {
+    return _originalConfirm(message);
   }
-}, true);
+};
 
 // ==========================================
 // CONTROLADOR GENERAL FRONTEND (FNX ADMIN)
@@ -134,12 +109,12 @@ async function arrancarAplicacion() {
   await cargarOpcionesSistemaYUsuario();
   actualizarDashboard();
 
-  // Alerta de actualización exitosa para v1.0.2
+  // Alerta de actualización exitosa para v1.0.3
   const alertVersion = localStorage.getItem('version_alert_dismissed');
-  if (alertVersion !== '1.0.2') {
+  if (alertVersion !== '1.0.3') {
     setTimeout(() => {
-      alert('¡Actualización Exitosa!\n\nFENIX Suite ha sido actualizada correctamente a la versión 1.0.2.\n\nMejoras y corrección de bugs aplicadas con éxito.');
-      localStorage.setItem('version_alert_dismissed', '1.0.2');
+      alert('¡Actualización Exitosa!\n\nFENIX Suite ha sido actualizada correctamente a la versión 1.0.3.\n\nMejoras y corrección de bugs aplicadas con éxito.');
+      localStorage.setItem('version_alert_dismissed', '1.0.3');
     }, 1000);
   }
 

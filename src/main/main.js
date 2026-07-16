@@ -742,6 +742,38 @@ ipcMain.on('app:force-focus', () => {
   }
 });
 
+// --- Diálogos de Sistema Síncronos con Foco Controlado ---
+ipcMain.on('dialog:alert', (event, message) => {
+  if (mainWindow) {
+    dialog.showMessageBoxSync(mainWindow, {
+      type: 'info',
+      title: 'FENIX Suite',
+      message: message,
+      buttons: ['Aceptar'],
+      defaultId: 0,
+      noLink: true
+    });
+  }
+  event.returnValue = true;
+});
+
+ipcMain.on('dialog:confirm', (event, message) => {
+  let val = false;
+  if (mainWindow) {
+    const res = dialog.showMessageBoxSync(mainWindow, {
+      type: 'question',
+      title: 'FENIX Suite',
+      message: message,
+      buttons: ['Cancelar', 'Aceptar'],
+      defaultId: 1,
+      cancelId: 0,
+      noLink: true
+    });
+    val = (res === 1);
+  }
+  event.returnValue = val;
+});
+
 autoUpdater.on('update-available', () => {
   if (mainWindow) mainWindow.webContents.send('updater:disponible');
 });
