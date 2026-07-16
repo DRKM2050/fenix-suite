@@ -1,0 +1,2158 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FENIX Suite - Plataforma Administrativa</title>
+  <!-- Tailwind CSS Play CDN para inicio rápido sin compilación previa -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            slate: {
+              850: '#151f32',
+              900: '#0f172a',
+              950: '#020617'
+            },
+            indigo: {
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts: Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Outfit', sans-serif;
+      background-color: #020617;
+      color: #f1f5f9;
+      user-select: none;
+      overflow: hidden;
+    }
+
+    input, textarea, select {
+      user-select: text !important;
+      -webkit-user-select: text !important;
+    }
+
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 9999px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #6366f1;
+    }
+
+    /* Glassmorphism Classes */
+    .glass-panel {
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .glass-card {
+      background: rgba(30, 41, 59, 0.4);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .glass-card:hover {
+      border-color: rgba(99, 102, 241, 0.3);
+      transform: translateY(-2px);
+    }
+
+    .glass-input {
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #f8fafc;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .glass-input:focus {
+      border-color: #6366f1;
+      box-shadow: 0 0 0 1px #6366f1;
+    }
+
+    /* Opacidad y color oscuro para placeholders */
+    .glass-input::placeholder {
+      color: #475569 !important;
+      opacity: 0.8 !important;
+    }
+
+    /* Tab transitions */
+    .view-section {
+      display: none;
+      animation: fadeIn 0.3s ease-in-out forwards;
+    }
+
+    .view-section.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+</head>
+
+<body class="h-screen w-screen flex flex-col">
+
+  <!-- ==========================================
+       TOAST NOTIFICATION (BOCADILLO DE COPIADO)
+       ========================================== -->
+  <div id="toastNotification"
+    class="fixed bottom-5 right-5 z-50 bg-emerald-600 border border-emerald-500 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-lg opacity-0 transition-opacity duration-300 pointer-events-none">
+    Copiado al Portapapeles
+  </div>
+
+  <!-- ==========================================
+       MODAL: INICIAR JORNADA CONTABLE
+       ========================================== -->
+  <div id="iniciarJornadaModal"
+    class="fixed inset-0 z-50 hidden flex items-center justify-center bg-slate-950/80 backdrop-blur-md">
+    <div class="glass-panel w-full max-w-sm p-6 rounded-2xl border border-slate-800 text-center">
+      <div class="mb-4 flex justify-center">
+        <div
+          class="h-12 w-12 bg-emerald-600/20 text-emerald-400 rounded-full flex items-center justify-center border border-emerald-500/30">
+          <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+        </div>
+      </div>
+      <h3 class="text-lg font-bold mb-1 text-slate-100">Iniciar Operaciones</h3>
+      <p class="text-xs text-slate-400 mb-4">Seleccione la Fecha Contable activa para esta jornada.</p>
+      <input type="date" id="iniciarJornadaFechaInput"
+        class="w-full glass-input rounded-xl px-4 py-2.5 text-center text-sm mb-4">
+      <div class="flex gap-2">
+        <button id="btnConfirmarIniciarJornada"
+          class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2 rounded-xl text-sm transition">Iniciar
+          Día</button>
+        <button id="btnCancelarIniciarJornada"
+          class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-400 font-semibold py-2 rounded-xl text-sm transition">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       MODAL: HISTORIAL DE TRANSACCIONES DE UN CLIENTE
+       ========================================== -->
+  <div id="clienteHistorialModal"
+    class="fixed inset-0 z-40 hidden flex items-center justify-center bg-slate-950/90 backdrop-blur-md">
+    <div class="glass-panel w-full max-w-4xl p-6 rounded-2xl border border-slate-800 flex flex-col max-h-[85vh]">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3 mb-4">
+        <h3 class="text-lg font-bold text-slate-200">Historial: <span id="historialClienteNombre"
+            class="text-indigo-400 font-bold"></span></h3>
+        <button id="btnCerrarHistorial" class="text-slate-400 hover:text-slate-200">
+          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <!-- Filtros Internos -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4 bg-slate-900/60 p-3 rounded-xl border border-slate-800/80">
+        <div>
+          <label class="block text-[10px] text-slate-500 font-semibold mb-1">Rango de Fechas</label>
+          <div class="flex gap-1">
+            <input type="date" id="histFechaInicio" class="w-full glass-input rounded px-2 py-1 text-[10px]">
+            <input type="date" id="histFechaFin" class="w-full glass-input rounded px-2 py-1 text-[10px]">
+          </div>
+        </div>
+        <div>
+          <label class="block text-[10px] text-slate-500 font-semibold mb-1">Filtrar por Tipo</label>
+          <select id="histTipo" class="w-full glass-input rounded px-2 py-1 text-[10px]">
+            <option value="">Todos</option>
+            <option value="COMPRA">COMPRA</option>
+            <option value="VENTA">VENTA</option>
+            <option value="ECOMMERCE / COMPRA">ECOMMERCE / COMPRA</option>
+            <option value="ECOMMERCE / VENTA">ECOMMERCE / VENTA</option>
+            <option value="GASTO">GASTO</option>
+          </select>
+        </div>
+        <div class="flex items-end">
+          <button id="btnFiltrarHistorial"
+            class="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold py-1.5 rounded transition">Aplicar
+            Filtros</button>
+        </div>
+      </div>
+      <!-- Tabla -->
+      <div class="flex-1 overflow-y-auto border border-slate-800/60 rounded-xl mb-4">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr class="bg-slate-900/80 text-slate-400 border-b border-slate-800">
+              <th class="p-3">Ref</th>
+              <th class="p-3">Fecha Contable</th>
+              <th class="p-3">Cuenta</th>
+              <th class="p-3">Tipo</th>
+              <th class="p-3 text-right">Monto</th>
+              <th class="p-3">Concepto</th>
+            </tr>
+          </thead>
+          <tbody id="tablaHistorialCliente" class="divide-y divide-slate-850/40 text-slate-350">
+            <!-- Dinámico -->
+          </tbody>
+        </table>
+      </div>
+      <!-- Totales -->
+      <div
+        class="flex justify-between items-center text-xs text-slate-400 font-bold bg-slate-950/40 p-3 rounded-xl border border-slate-800">
+        <div>Compras: <span id="histTotalCompras" class="text-emerald-455">0.00 USDT</span></div>
+        <div>Ventas: <span id="histTotalVentas" class="text-sky-455">0.00 USDT</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       MODAL: FICHA DETALLADA DEL CLIENTE
+       ========================================== -->
+  <div id="clienteFichaModal"
+    class="fixed inset-0 z-50 hidden flex items-center justify-center bg-slate-950/80 backdrop-blur-md">
+    <div class="glass-panel w-full max-w-md p-6 rounded-2xl border border-slate-800 space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+        <h3 class="text-base font-bold text-slate-200">Ficha Detallada del Cliente</h3>
+        <button onclick="document.getElementById('clienteFichaModal').classList.add('hidden')"
+          class="text-slate-400 hover:text-slate-200">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <div>
+          <span class="block text-slate-500 font-semibold uppercase tracking-wider text-[10px]">Nombre Completo</span>
+          <div id="fichaClienteNombre" class="text-slate-200 font-bold mt-0.5 text-sm">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <span class="block text-slate-500 font-semibold uppercase tracking-wider text-[10px]">Documento / RUC</span>
+            <div id="fichaClienteDocumento" class="text-slate-200 font-bold mt-0.5">--</div>
+          </div>
+          <div>
+            <span class="block text-slate-500 font-semibold uppercase tracking-wider text-[10px]">Tipo de Cliente</span>
+            <div id="fichaClienteTipo" class="text-slate-200 font-bold mt-0.5">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <span class="block text-slate-500 font-semibold uppercase tracking-wider text-[10px]">Teléfono</span>
+            <div id="fichaClienteTelefono" class="text-slate-200 font-bold mt-0.5">--</div>
+          </div>
+          <div>
+            <span class="block text-slate-500 font-semibold uppercase tracking-wider text-[10px]">Correo
+              Electrónico</span>
+            <div id="fichaClienteMail" class="text-slate-200 font-bold mt-0.5">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <span class="block text-slate-500 font-semibold uppercase tracking-wider text-[10px]">Status</span>
+            <div id="fichaClienteStatus" class="text-slate-200 font-bold mt-0.5">--</div>
+          </div>
+          <div>
+            <span class="block text-slate-500 font-semibold uppercase tracking-wider text-[10px]">Fecha Registro</span>
+            <div id="fichaClienteFecha" class="text-slate-200 font-bold mt-0.5">--</div>
+          </div>
+        </div>
+        <div>
+          <span class="block text-slate-500 font-semibold uppercase tracking-wider text-[10px]">Observaciones /
+            Anotaciones</span>
+          <div id="fichaClienteObservaciones"
+            class="text-slate-300 bg-slate-950/60 p-2.5 rounded-lg border border-slate-900 mt-1 whitespace-pre-wrap">--
+          </div>
+        </div>
+      </div>
+      <div class="flex justify-end pt-2 border-t border-slate-800">
+        <button onclick="document.getElementById('clienteFichaModal').classList.add('hidden')"
+          class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold py-1.5 px-4 rounded-lg transition">Cerrar
+          Ficha</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       MODAL: CREAR/EDITAR MI CUENTA PROPIA
+       ========================================== -->
+  <div id="miCuentaModal"
+    class="fixed inset-0 z-50 hidden flex items-center justify-center bg-slate-950/85 backdrop-blur-sm">
+    <div class="glass-panel w-full max-w-sm p-6 rounded-2xl border border-slate-800 space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+        <h3 id="miCuentaModalTitulo" class="text-sm font-bold text-slate-200">Nueva Cuenta Propia</h3>
+        <button onclick="document.getElementById('miCuentaModal').classList.add('hidden')"
+          class="text-slate-400 hover:text-slate-200">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <form id="formMiCuenta" class="space-y-3">
+        <input type="hidden" id="miCuentaId">
+        <div>
+          <label class="block text-[10px] text-slate-400 font-semibold mb-1">Nombre Cuenta *</label>
+          <input type="text" id="miCuentaNombre" placeholder="Ej: Caja Principal, Cuenta Itaú USD"
+            class="w-full glass-input rounded-lg px-2.5 py-1.5 text-xs" required>
+        </div>
+        <div>
+          <label class="block text-[10px] text-slate-400 font-semibold mb-1">Tipo Cuenta</label>
+          <select id="miCuentaTipo" class="w-full glass-input rounded-lg px-2.5 py-1.5 text-xs">
+            <option value="EFECTIVO">EFECTIVO / CAJA</option>
+            <option value="BANCO">CUENTA BANCARIA</option>
+            <option value="CRIPTO">WALLET / BLOCKCHAIN</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[10px] text-slate-400 font-semibold mb-1">Moneda Cuenta</label>
+          <select id="miCuentaMoneda" class="w-full glass-input rounded-lg px-2.5 py-1.5 text-xs">
+            <!-- Dinámico -->
+          </select>
+        </div>
+        <div>
+          <label class="block text-[10px] text-slate-400 font-semibold mb-1">Referencia (CBU, NRO, ALIAS)</label>
+          <input type="text" id="miCuentaReferencia" placeholder="Opcional"
+            class="w-full glass-input rounded-lg px-2.5 py-1.5 text-xs">
+        </div>
+        <div>
+          <label class="block text-[10px] text-slate-400 font-semibold mb-1">Observaciones</label>
+          <input type="text" id="miCuentaObservaciones" placeholder="Detalles de la cuenta"
+            class="w-full glass-input rounded-lg px-2.5 py-1.5 text-xs">
+        </div>
+        <div>
+          <label class="block text-[10px] text-slate-400 font-semibold mb-1">Estado</label>
+          <select id="miCuentaStatus" class="w-full glass-input rounded-lg px-2.5 py-1.5 text-xs">
+            <option value="ACTIVO">ACTIVO</option>
+            <option value="INACTIVO">INACTIVO</option>
+          </select>
+        </div>
+        <div class="flex gap-2 pt-2 border-t border-slate-800">
+          <button type="submit" id="btnGuardarMiCuenta"
+            class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-1.5 rounded-lg text-xs transition">Guardar</button>
+          <button type="button" onclick="document.getElementById('miCuentaModal').classList.add('hidden')"
+            class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-400 font-semibold py-1.5 rounded-lg text-xs transition">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       MODAL: CREAR CLIENTE RÁPIDO (MOVIMIENTOS)
+       ========================================== -->
+  <div id="movNuevoClienteModal"
+    class="fixed inset-0 z-50 hidden flex items-center justify-center bg-slate-950/80 backdrop-blur-md">
+    <div class="glass-panel w-full max-w-sm p-6 rounded-2xl border border-slate-800 space-y-4">
+      <h3 class="text-sm font-bold text-slate-200">Crear Cliente Nuevo</h3>
+      <form id="formMovNuevoCliente" class="space-y-3">
+        <div>
+          <label class="block text-[10px] text-slate-400 font-semibold mb-1">Nombre Completo *</label>
+          <input type="text" id="movNewCliNombre" class="w-full glass-input rounded-lg px-2.5 py-1.5 text-xs" required>
+        </div>
+        <div>
+          <label class="block text-[10px] text-slate-400 font-semibold mb-1">Documento / RUC *</label>
+          <input type="text" id="movNewCliDocumento" class="w-full glass-input rounded-lg px-2.5 py-1.5 text-xs"
+            required>
+        </div>
+        <div>
+          <label class="block text-[10px] text-slate-400 font-semibold mb-1">Tipo de Cliente</label>
+          <select id="movNewCliTipo" class="w-full glass-input rounded-lg px-2.5 py-1.5 text-xs">
+            <option value="OCASIONAL">OCASIONAL</option>
+            <option value="MINORISTA">MINORISTA</option>
+            <option value="MAYORISTA">MAYORISTA</option>
+          </select>
+        </div>
+        <div class="flex gap-2 pt-2 border-t border-slate-800">
+          <button type="submit"
+            class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-1.5 rounded-lg text-xs transition">Crear</button>
+          <button type="button" onclick="document.getElementById('movNuevoClienteModal').classList.add('hidden')"
+            class="flex-1 bg-slate-800 text-slate-400 font-semibold py-1.5 rounded-lg text-xs transition">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       MODAL: CREAR CUENTA RÁPIDA (MOVIMIENTOS)
+       ========================================== -->
+  <!-- ==========================================
+       MODAL: CREAR PRODUCTO E-COMMERCE RÁPIDO (MOVIMIENTOS)
+       ========================================== -->
+  <div id="movNuevoEcoProductoModal"
+    class="fixed inset-0 z-50 hidden flex items-center justify-center bg-slate-950/80 backdrop-blur-md">
+    <div class="glass-panel w-full max-w-sm p-6 rounded-2xl border border-slate-800 space-y-4">
+      <h3 class="text-sm font-bold text-slate-200">Crear Nuevo Producto E-Commerce</h3>
+      <form id="formMovNuevoEcoProducto" class="space-y-3">
+        <div>
+          <label class="block text-[10px] text-slate-400 font-semibold mb-1">Nombre del Producto *</label>
+          <input type="text" id="movNewProdNombre" placeholder="Ej: PlayStation 5 Slim"
+            class="w-full glass-input rounded-lg px-2.5 py-1.5 text-xs" required>
+        </div>
+        <div>
+          <label class="block text-[10px] text-slate-400 font-semibold mb-1">Código SKU</label>
+          <input type="text" id="movNewProdSku" placeholder="Ej: PS5-SLIM"
+            class="w-full glass-input rounded-lg px-2.5 py-1.5 text-xs">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[10px] text-slate-400 font-semibold mb-1">Monto Costo *</label>
+            <input type="number" step="any" id="movNewProdMontoCosto" placeholder="0.00"
+              class="w-full glass-input rounded-lg px-2.5 py-1.5 text-xs" required>
+          </div>
+          <div>
+            <label class="block text-[10px] text-slate-400 font-semibold mb-1">Moneda Costo *</label>
+            <select id="movNewProdMonedaCosto" class="w-full glass-input rounded-lg px-2.5 py-1.5 text-xs" required>
+              <!-- Dinámico -->
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[10px] text-slate-400 font-semibold mb-1">Tasa Cambio *</label>
+            <input type="number" step="any" id="movNewProdCambioCosto" placeholder="1.0"
+              class="w-full glass-input rounded-lg px-2.5 py-1.5 text-xs" required>
+          </div>
+          <div>
+            <label class="block text-[10px] text-slate-400 font-semibold mb-1">Stock Inicial *</label>
+            <input type="number" id="movNewProdStock" placeholder="0"
+              class="w-full glass-input rounded-lg px-2.5 py-1.5 text-xs" required>
+          </div>
+        </div>
+        <div class="flex gap-2 pt-2 border-t border-slate-800">
+          <button type="submit"
+            class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-1.5 rounded-lg text-xs transition">Crear</button>
+          <button type="button" onclick="document.getElementById('movNuevoEcoProductoModal').classList.add('hidden')"
+            class="flex-1 bg-slate-800 text-slate-400 font-semibold py-1.5 rounded-lg text-xs transition">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="movNuevaCuentaModal"
+    class="fixed inset-0 z-50 hidden flex items-center justify-center bg-slate-950/80 backdrop-blur-md">
+    <div class="glass-panel w-full max-w-sm p-6 rounded-2xl border border-slate-800 space-y-4">
+      <h3 class="text-sm font-bold text-slate-200">Crear Cuenta para Cliente</h3>
+      <form id="formMovNuevaCuenta" class="space-y-3">
+        <div>
+          <label class="block text-[10px] text-slate-400 font-semibold mb-1">Nombre Cuenta *</label>
+          <input type="text" id="movNewCtaNombre" placeholder="Ej: Sudameris USD"
+            class="w-full glass-input rounded-lg px-2.5 py-1.5 text-xs" required>
+        </div>
+        <div>
+          <label class="block text-[10px] text-slate-400 font-semibold mb-1">Tipo Cuenta</label>
+          <select id="movNewCtaTipo" class="w-full glass-input rounded-lg px-2.5 py-1.5 text-xs">
+            <option value="EFECTIVO">EFECTIVO / CAJA</option>
+            <option value="BANCO">CUENTA BANCARIA</option>
+            <option value="CRIPTO">WALLET / BLOCKCHAIN</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[10px] text-slate-400 font-semibold mb-1">Moneda Cuenta</label>
+          <select id="movNewCtaMoneda" class="w-full glass-input rounded-lg px-2.5 py-1.5 text-xs">
+            <!-- Dinámico -->
+          </select>
+        </div>
+        <div>
+          <label class="block text-[10px] text-slate-400 font-semibold mb-1">Referencia</label>
+          <input type="text" id="movNewCtaReferencia" placeholder="CBU, Wallet, etc."
+            class="w-full glass-input rounded-lg px-2.5 py-1.5 text-xs">
+        </div>
+        <div class="flex gap-2 pt-2 border-t border-slate-800">
+          <button type="submit"
+            class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-1.5 rounded-lg text-xs transition">Crear</button>
+          <button type="button" onclick="document.getElementById('movNuevaCuentaModal').classList.add('hidden')"
+            class="flex-1 bg-slate-800 text-slate-400 font-semibold py-1.5 rounded-lg text-xs transition">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       MODAL: EDITAR DATOS CORPORATIVOS (EMPRESA)
+       ========================================== -->
+  <div id="editarEmpresaModal"
+    class="fixed inset-0 z-40 hidden flex items-center justify-center bg-slate-950/80 backdrop-blur-md">
+    <div class="glass-panel w-full max-w-md p-6 rounded-2xl border border-slate-800">
+      <h3 class="text-lg font-bold mb-4">Editar Datos Corporativos</h3>
+      <form id="formEmpresaModal" class="space-y-4">
+        <div>
+          <label class="block text-xs text-slate-400 font-semibold mb-1">Razón Social / Nombre Empresa</label>
+          <input type="text" id="editEmpresaNombre" placeholder="Ej: Fenix Trading LLC"
+            class="w-full glass-input rounded-lg px-3 py-2 text-sm">
+        </div>
+        <div>
+          <label class="block text-xs text-slate-400 font-semibold mb-1">Identificación Fiscal / RUC</label>
+          <input type="text" id="editEmpresaRuc" placeholder="Ej: RUC 80012345-6"
+            class="w-full glass-input rounded-lg px-3 py-2 text-sm">
+        </div>
+        <div>
+          <label class="block text-xs text-slate-400 font-semibold mb-1">Correo Contable</label>
+          <input type="email" id="editEmpresaEmail" placeholder="contabilidad@fenix.com"
+            class="w-full glass-input rounded-lg px-3 py-2 text-sm">
+        </div>
+        <div>
+          <label class="block text-xs text-slate-400 font-semibold mb-1">Teléfono Administración</label>
+          <input type="text" id="editEmpresaTelefono" placeholder="+595 21 123..."
+            class="w-full glass-input rounded-lg px-3 py-2 text-sm">
+        </div>
+        <div>
+          <label class="block text-xs text-slate-400 font-semibold mb-1">Moneda Principal de Reportes</label>
+          <select id="editEmpresaMoneda"
+            class="w-full glass-input rounded-lg px-3 py-2 text-sm bg-slate-900 text-slate-100">
+            <!-- Cargado dinámicamente -->
+          </select>
+        </div>
+        <div class="flex gap-2 pt-2">
+          <button type="submit"
+            class="flex-1 bg-indigo-650 hover:bg-indigo-600 text-white font-semibold py-2 rounded-xl text-sm transition">Guardar
+            Cambios</button>
+          <button type="button" id="btnCerrarEmpresaModal"
+            class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-400 font-semibold py-2 rounded-xl text-sm transition">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       PANTALLA DE LOGEO (MODAL SEGURIDAD RESTRICTIVO)
+       ========================================== -->
+  <div id="loginModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/95 backdrop-blur-xl">
+    <div class="glass-panel w-full max-w-md p-8 rounded-3xl shadow-2xl text-center border border-slate-800">
+      <div class="mb-6 flex justify-center">
+        <div
+          class="h-16 w-16 bg-indigo-600/20 text-indigo-400 rounded-2xl flex items-center justify-center border border-indigo-500/30">
+          <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+        </div>
+      </div>
+      <h2 id="loginTitle" class="text-2xl font-bold text-slate-100 mb-2">Acceder a FENIX Suite</h2>
+      <p id="loginSubtitle" class="text-slate-400 text-sm mb-6">La base de datos se encuentra encriptada. Ingrese la
+        clave maestra de acceso.</p>
+      <form id="loginForm" class="space-y-4">
+        <div class="relative">
+          <input type="password" id="loginPassword" placeholder="Contraseña de Seguridad"
+            class="w-full glass-input rounded-xl px-4 py-3 text-center text-lg" required>
+        </div>
+        <button type="submit"
+          class="w-full bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-semibold py-3 rounded-xl transition shadow-lg shadow-indigo-600/20">
+          Confirmar Acceso
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       LAYOUT PRINCIPAL DE LA APLICACIÓN
+       ========================================== -->
+  <div class="flex-1 flex overflow-hidden">
+
+    <!-- SIDEBAR (NAVEGACIÓN LATERAL) -->
+    <aside class="w-64 glass-panel border-r border-slate-900 flex flex-col justify-between">
+      <div>
+        <!-- Logo / Marca -->
+        <div class="p-6 border-b border-slate-900/60 flex items-center gap-3">
+          <!-- Ruta relativa corregida para Electron -->
+          <img src="../../assets/img/logofnx.png" class="h-9 w-auto" alt="Logo"
+            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+          <div
+            class="hidden h-9 w-9 bg-gradient-to-tr from-indigo-600 to-cyan-500 rounded-lg flex items-center justify-center font-bold text-white shadow-lg">
+            F</div>
+          <div>
+            <h1 class="font-bold text-md tracking-wider text-slate-200">FENIX Suite</h1>
+            <span class="text-xs text-indigo-400 font-semibold tracking-widest uppercase">Fintech Suite</span>
+          </div>
+        </div>
+
+        <!-- Links del Menú (Reordenado) -->
+        <nav class="p-4 space-y-1">
+          <!-- 1. Dashboard -->
+          <a href="#" data-target="view-dashboard"
+            class="nav-link active flex items-center gap-3 px-4 py-3 rounded-xl bg-indigo-600/10 text-indigo-400 border border-indigo-500/20 font-medium transition">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4z" />
+            </svg>
+            Dashboard
+          </a>
+          <!-- 2. Movimientos -->
+          <a href="#" data-target="view-movimientos"
+            class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-900/60 font-medium transition">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+            </svg>
+            Movimientos
+          </a>
+          <!-- 3. Cambios (Por debajo de Movimientos) -->
+          <a href="#" data-target="view-cambios"
+            class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-900/60 font-medium transition">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Tasas de Cambio
+          </a>
+          <!-- 4. E-Commerce (Nuevo) -->
+          <a href="#" data-target="view-ecommerce"
+            class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-900/60 font-medium transition">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+            </svg>
+            E-Commerce
+          </a>
+          <!-- Gastos Personales (Nuevo) -->
+          <a href="#" data-target="view-gastos"
+            class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-900/60 font-medium transition">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+            Gastos Personales
+          </a>
+          <!-- 5. Clientes y Cuentas -->
+          <a href="#" data-target="view-clientes"
+            class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-900/60 font-medium transition">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+            Clientes y Cuentas
+          </a>
+          <!-- 6. Reportes (Por encima de Opciones) -->
+          <a href="#" data-target="view-reportes"
+            class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-900/60 font-medium transition">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Reportes
+          </a>
+          <!-- 7. Opciones -->
+          <a href="#" data-target="view-opciones"
+            class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-900/60 font-medium transition">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            Ajustes
+          </a>
+        </nav>
+      </div>
+
+      <!-- Sección de Base del Sidebar -->
+      <div class="p-4 border-t border-slate-900 space-y-3">
+        <div class="flex items-center justify-between text-xs text-slate-500">
+          <span>Versión 1.0.1</span>
+          <button id="btnCheckUpdate" class="text-indigo-400 hover:text-indigo-300 font-semibold">Buscar
+            Updates</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ÁREA DE CONTENIDO CENTRAL -->
+    <main class="flex-1 flex flex-col overflow-hidden">
+
+      <!-- TOPBAR (BARRA SUPERIOR) -->
+      <header class="h-16 glass-panel border-b border-slate-900 flex items-center justify-between px-8">
+        <!-- Indicador de Jornada Contable -->
+        <div class="flex items-center gap-4">
+          <div class="flex items-center gap-2">
+            <span id="contableBadgeColor" class="h-3 w-3 rounded-full bg-rose-500"></span>
+            <span id="contableBadgeText" class="text-sm font-semibold tracking-wide">JORNADA CERRADA</span>
+          </div>
+          <div id="contableActiveDateWrapper"
+            class="hidden text-xs bg-slate-900 border border-slate-850 px-3 py-1 rounded-full text-slate-400">
+            Día contable activo: <span id="contableActiveDateVal" class="text-indigo-400 font-bold"></span>
+          </div>
+        </div>
+
+        <!-- Reloj y fecha real -->
+        <div class="text-right text-xs text-slate-500 font-medium">
+          <div id="realClock" class="text-sm font-bold text-slate-350">--:--:--</div>
+          <div id="realDate">--/--/----</div>
+        </div>
+      </header>
+
+      <!-- SECCIONES / VISTAS DE PANTALLA -->
+      <div class="flex-1 overflow-y-auto p-8 relative">
+
+        <!-- 1. VIEW: DASHBOARD -->
+        <section id="view-dashboard" class="view-section active space-y-6">
+          <div class="flex justify-between items-center">
+            <div>
+              <h2 class="text-2xl font-bold text-slate-200">Panel de Control General</h2>
+              <p class="text-slate-400 text-sm">Resumen contable consolido en base USDT</p>
+            </div>
+            <!-- Acciones de Jornada -->
+            <div class="flex items-center gap-3">
+              <button id="btnIniciarOperaciones"
+                class="bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-lg transition">
+                Iniciar Operaciones
+              </button>
+              <button id="btnCerrarOperaciones"
+                class="bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-lg transition hidden">
+                Cerrar Operaciones
+              </button>
+            </div>
+          </div>
+
+          <!-- Panel de Inicio Guiado (Onboarding) -->
+          <div id="onboardingPanel"
+            class="glass-panel p-5 rounded-2xl border border-indigo-500/20 bg-indigo-950/10 mb-6 hidden">
+            <div class="flex items-start justify-between">
+              <div>
+                <h3 class="text-sm font-bold text-indigo-400 flex items-center gap-2">
+                  <svg class="h-4 w-4 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  Guía de Inicio Rápido - FENIX Suite
+                </h3>
+                <p class="text-slate-400 text-xs mt-1">Siga estos pasos esenciales para configurar la plataforma y
+                  comenzar a registrar operaciones:</p>
+              </div>
+              <button id="btnDismissOnboarding"
+                class="text-slate-500 hover:text-slate-400 text-xs font-bold transition">Ocultar guía</button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+              <!-- Paso 1 -->
+              <div id="step-empresa"
+                class="bg-slate-900/50 border border-slate-800 p-3 rounded-xl flex items-start gap-3 transition">
+                <div
+                  class="step-num text-xs font-bold bg-slate-800 text-slate-400 h-5 w-5 rounded-full flex items-center justify-center shrink-0">
+                  1</div>
+                <div class="flex-1">
+                  <div class="text-xs font-bold text-slate-200">Datos Empresa</div>
+                  <div class="text-[10px] text-slate-400 mt-0.5">Define RUC y moneda principal en Ajustes.</div>
+                  <a href="#" id="link-step-empresa"
+                    class="text-[10px] text-indigo-400 font-semibold hover:underline mt-1 block">Configurar →</a>
+                </div>
+              </div>
+              <!-- Paso 2 -->
+              <div id="step-cuentas"
+                class="bg-slate-900/50 border border-slate-800 p-3 rounded-xl flex items-start gap-3 transition">
+                <div
+                  class="step-num text-xs font-bold bg-slate-800 text-slate-400 h-5 w-5 rounded-full flex items-center justify-center shrink-0">
+                  2</div>
+                <div class="flex-1">
+                  <div class="text-xs font-bold text-slate-200">Mis Cuentas Propias</div>
+                  <div class="text-[10px] text-slate-400 mt-0.5">Crea tus cajas contables en Ajustes.</div>
+                  <a href="#" id="link-step-cuentas"
+                    class="text-[10px] text-indigo-400 font-semibold hover:underline mt-1 block">Crear →</a>
+                </div>
+              </div>
+              <!-- Paso 3 -->
+              <div id="step-cambios"
+                class="bg-slate-900/50 border border-slate-800 p-3 rounded-xl flex items-start gap-3 transition">
+                <div
+                  class="step-num text-xs font-bold bg-slate-800 text-slate-400 h-5 w-5 rounded-full flex items-center justify-center shrink-0">
+                  3</div>
+                <div class="flex-1">
+                  <div class="text-xs font-bold text-slate-200">Tasas del Día</div>
+                  <div class="text-[10px] text-slate-400 mt-0.5">Establece las cotizaciones de divisas.</div>
+                  <a href="#" id="link-step-cambios"
+                    class="text-[10px] text-indigo-400 font-semibold hover:underline mt-1 block">Fijar →</a>
+                </div>
+              </div>
+              <!-- Paso 4 -->
+              <div id="step-movimientos"
+                class="bg-slate-900/50 border border-slate-800 p-3 rounded-xl flex items-start gap-3 transition">
+                <div
+                  class="step-num text-xs font-bold bg-slate-800 text-slate-400 h-5 w-5 rounded-full flex items-center justify-center shrink-0">
+                  4</div>
+                <div class="flex-1">
+                  <div class="text-xs font-bold text-slate-200">Registrar Operaciones</div>
+                  <div class="text-[10px] text-slate-400 mt-0.5">Registra transacciones en el libro contable.</div>
+                  <a href="#" id="link-step-movimientos"
+                    class="text-[10px] text-indigo-400 font-semibold hover:underline mt-1 block">Ir a Ledger →</a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cards KPIs Financieros -->
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div class="glass-card p-6 rounded-2xl">
+              <div class="text-slate-500 text-xs font-bold tracking-wider uppercase mb-1">Balance General</div>
+              <div id="kpiBalanceGeneral" class="text-3xl font-bold text-slate-100">0.00 <span
+                  class="text-sm text-indigo-400">USDT</span></div>
+              <p class="text-[11px] text-slate-400 mt-2">Patrimonio consolidado de la empresa</p>
+            </div>
+            <div class="glass-card p-6 rounded-2xl">
+              <div class="text-slate-500 text-xs font-bold tracking-wider uppercase mb-1">Efectivo</div>
+              <div id="kpiEfectivo" class="text-3xl font-bold text-slate-100">0.00 <span
+                  class="text-sm text-indigo-400">USDT</span></div>
+              <p class="text-[11px] text-slate-400 mt-2">Cajas físicas en todas las monedas</p>
+            </div>
+            <div class="glass-card p-6 rounded-2xl">
+              <div class="text-slate-500 text-xs font-bold tracking-wider uppercase mb-1">Bancos</div>
+              <div id="kpiBancos" class="text-3xl font-bold text-slate-100">0.00 <span
+                  class="text-sm text-indigo-400">USDT</span></div>
+              <p class="text-[11px] text-slate-400 mt-2">Cuentas bancarias tradicionales</p>
+            </div>
+            <div class="glass-card p-6 rounded-2xl">
+              <div class="text-slate-500 text-xs font-bold tracking-wider uppercase mb-1">Wallets & Cripto</div>
+              <div id="kpiCripto" class="text-3xl font-bold text-slate-100">0.00 <span
+                  class="text-sm text-indigo-400">USDT</span></div>
+              <p class="text-[11px] text-slate-400 mt-2">Saldos en redes Blockchain</p>
+            </div>
+          </div>
+
+          <!-- Gráfico y Flujos del Día -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="glass-panel col-span-2 p-6 rounded-2xl flex flex-col justify-between">
+              <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-slate-350 text-md">Movimiento Transaccional Histórico</h3>
+                <span class="text-xs text-indigo-400 font-semibold uppercase">Últimos Registros</span>
+              </div>
+              <div
+                class="h-64 flex items-center justify-center border border-slate-800/80 rounded-xl relative overflow-hidden bg-slate-950/40">
+                <canvas id="financialChart" class="w-full h-full p-2"></canvas>
+              </div>
+            </div>
+
+            <!-- Resumen E-Commerce -->
+            <div class="glass-panel p-6 rounded-2xl flex flex-col justify-between">
+              <div>
+                <h3 class="font-bold text-slate-350 text-md mb-4">Métricas Logísticas E-Commerce</h3>
+                <div class="space-y-4">
+                  <div class="flex justify-between items-center">
+                    <span class="text-xs text-slate-500 font-medium">Volumen de Compra E-Com</span>
+                    <span id="kpiEcoCompra" class="text-sm font-semibold text-emerald-400">0.00 USDT</span>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <span class="text-xs text-slate-500 font-medium">Volumen de Venta E-Com</span>
+                    <span id="kpiEcoVenta" class="text-sm font-semibold text-sky-400">0.00 USDT</span>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <span class="text-xs text-slate-500 font-medium">Productos Operados</span>
+                    <span id="kpiEcoItems" class="text-sm font-semibold text-indigo-400">0 Unidades</span>
+                  </div>
+                </div>
+              </div>
+              <div class="mt-6 border-t border-slate-800/60 pt-4">
+                <p class="text-[11px] text-slate-400">El volumen logístico está asociado directamente a las órdenes de
+                  compras registradas en el día.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Resumen de Cuentas y Gastos Personales -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+            <!-- Mis Cuentas Balances -->
+            <div class="glass-panel lg:col-span-2 p-6 rounded-2xl flex flex-col space-y-4">
+              <h3 class="font-bold text-slate-350 text-md">Saldos de Mis Cuentas Propias</h3>
+              <div class="overflow-y-auto max-h-48 border border-slate-800/60 rounded-xl">
+                <table class="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr class="bg-slate-950/60 border-b border-slate-800 text-slate-400">
+                      <th class="p-2.5">Nombre Cuenta</th>
+                      <th class="p-2.5">Moneda</th>
+                      <th class="p-2.5">Referencia</th>
+                      <th class="p-2.5 text-right">Saldo Actual</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tablaDashMisCuentas" class="divide-y divide-slate-850/50 text-slate-350">
+                    <!-- Dinámico -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Gasto Personal Dashboard Card -->
+            <div class="glass-panel p-6 rounded-2xl flex flex-col justify-between">
+              <div>
+                <h3 class="font-bold text-slate-350 text-md mb-4">Resumen Gastos Personales</h3>
+                <div class="space-y-4">
+                  <div class="flex justify-between items-center">
+                    <span class="text-xs text-slate-500 font-medium">Gastos del Día</span>
+                    <span id="dashGastoDia" class="text-sm font-semibold text-rose-400">0,00 USDT</span>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <span class="text-xs text-slate-500 font-medium">Gastos del Mes</span>
+                    <span id="dashGastoMes" class="text-sm font-semibold text-rose-455">0,00 USDT</span>
+                  </div>
+                </div>
+              </div>
+              <div class="mt-6 border-t border-slate-800/60 pt-4 text-xs text-slate-400">
+                Gastos retirados de las cuentas personales y registrados contablemente.
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 2. VIEW: MOVIMIENTOS -->
+        <section id="view-movimientos" class="view-section space-y-6">
+          <div class="flex justify-between items-center">
+            <div>
+              <h2 class="text-2xl font-bold text-slate-200">Registro de Movimientos</h2>
+              <p class="text-slate-400 text-sm">Gestiona transacciones contables del día</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+            <!-- Formulario de Entrada -->
+            <div class="glass-panel p-6 rounded-2xl space-y-4">
+              <h3 class="font-bold text-slate-350 text-md border-b border-slate-800/60 pb-2">Nueva Operación</h3>
+              <form id="formMovimiento" class="space-y-4">
+                <!-- Cliente -->
+                <div>
+                  <label class="block text-xs text-slate-400 font-semibold mb-1">Cliente *</label>
+                  <div class="flex gap-2">
+                    <select id="movCliente" class="flex-1 glass-input rounded-lg px-3 py-2 text-sm" required>
+                      <!-- Dinámico -->
+                    </select>
+                    <button type="button" id="btnMovNuevoCliente" title="Crear Cliente Rápido"
+                      class="bg-indigo-650/40 border border-indigo-500/30 hover:bg-indigo-600/50 text-indigo-450 px-3 rounded-lg text-sm font-bold transition">+</button>
+                  </div>
+                </div>
+                <!-- Cuenta -->
+                <div>
+                  <label class="block text-xs text-slate-400 font-semibold mb-1">Cuenta *</label>
+                  <div class="flex gap-2">
+                    <select id="movCuenta" class="flex-1 glass-input rounded-lg px-3 py-2 text-sm" required>
+                      <!-- Dinámico -->
+                    </select>
+                    <button type="button" id="btnMovNuevaCuenta" title="Crear Cuenta Rápida"
+                      class="bg-indigo-650/40 border border-indigo-500/30 hover:bg-indigo-600/50 text-indigo-455 px-3 rounded-lg text-sm font-bold transition">+</button>
+                  </div>
+                </div>
+                <!-- Tipo de Transacción -->
+                <div>
+                  <label class="block text-xs text-slate-400 font-semibold mb-1">Tipo de Transacción *</label>
+                  <select id="movTipo" class="w-full glass-input rounded-lg px-3 py-2 text-sm" required>
+                    <!-- Dinámico cargado desde tabla tipos_transacciones -->
+                  </select>
+                </div>
+
+                <!-- SECCIÓN DINÁMICA E-COMMERCE -->
+                <div id="seccionEcommerce"
+                  class="hidden p-4 rounded-xl border border-indigo-500/20 bg-indigo-950/20 space-y-3">
+                  <div class="flex items-center gap-1.5">
+                    <h4 class="text-xs text-indigo-400 font-bold uppercase tracking-wider">Datos Logísticos E-Commerce
+                    </h4>
+                    <div class="group relative cursor-pointer text-indigo-400 hover:text-indigo-300">
+                      <span
+                        class="text-[10px] bg-indigo-950/80 border border-indigo-500/30 rounded-full h-3.5 w-3.5 flex items-center justify-center font-bold">?</span>
+                      <div
+                        class="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2.5 bg-slate-900 border border-slate-800 text-[10px] text-slate-350 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition duration-200 z-50">
+                        <strong>Monto Original</strong>: Costo del producto en la moneda local de compra.<br>
+                        <strong>Moneda Producto</strong>: Divisa de origen del producto.<br>
+                        <strong>Cambio Aplicado</strong>: Tasa para convertir la moneda del producto a USDT.
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <label class="block text-[10px] text-slate-455 font-semibold mb-1">Seleccionar Producto</label>
+                    <div class="flex gap-1.5">
+                      <select id="ecoProducto" class="flex-1 glass-input rounded-lg px-3 py-2 text-xs">
+                        <!-- Dinámico de ecommerce_productos -->
+                      </select>
+                      <button type="button" id="btnMovNuevoEcoProducto"
+                        class="bg-indigo-650 hover:bg-indigo-600 text-white px-2.5 rounded-lg text-sm font-bold transition"
+                        title="Nuevo Producto">+</button>
+                    </div>
+                  </div>
+                  <div class="grid grid-cols-2 gap-2">
+                    <div>
+                      <label class="block text-[10px] text-slate-450 font-semibold mb-1">Monto Original / Costo</label>
+                      <input type="number" step="any" id="ecoMonto" placeholder="0.00"
+                        class="w-full glass-input rounded-lg px-3 py-2 text-xs">
+                    </div>
+                    <div>
+                      <label class="block text-[10px] text-slate-455 font-semibold mb-1">Cantidad</label>
+                      <input type="number" id="ecoCantidad" placeholder="1" value="1" min="1"
+                        class="w-full glass-input rounded-lg px-3 py-2 text-xs">
+                    </div>
+                  </div>
+                  <div class="grid grid-cols-2 gap-2">
+                    <div>
+                      <label class="block text-[10px] text-slate-450 font-semibold mb-1">Moneda Producto</label>
+                      <select id="ecoMoneda" class="w-full glass-input rounded-lg px-3 py-2 text-xs">
+                        <!-- Dinámico de monedas -->
+                      </select>
+                    </div>
+                    <div>
+                      <label class="block text-[10px] text-slate-400 font-semibold mb-1">Cambio Aplicado</label>
+                      <input type="number" step="any" id="ecoCambio" placeholder="1.00"
+                        class="w-full glass-input rounded-lg px-3 py-2 text-xs">
+                    </div>
+                  </div>
+                  <!-- Alerta / Visualizador de Costo original para ventas -->
+                  <div id="ecoCostoOriginalContainer"
+                    class="hidden text-[10px] bg-slate-900 border border-indigo-500/20 px-3 py-2 rounded-lg text-indigo-400 font-semibold">
+                    Costo original registrado: <span id="lblEcoCostoOriginal" class="font-bold text-slate-200">--</span>
+                  </div>
+                </div>
+
+                <!-- Monto y Divisa principal -->
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-xs text-slate-400 font-semibold mb-1">Monto Principal *</label>
+                    <input type="number" step="any" id="movMonto" placeholder="0.00"
+                      class="w-full glass-input rounded-lg px-3 py-2 text-sm" required>
+                  </div>
+                  <div>
+                    <label class="block text-xs text-slate-400 font-semibold mb-1">Moneda Cuenta *</label>
+                    <select id="movMoneda" class="w-full glass-input rounded-lg px-3 py-2 text-sm" required>
+                      <!-- Dinámico de monedas -->
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Cambios y Tasas -->
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-xs text-slate-400 font-semibold mb-1">Tasa de Cambio</label>
+                    <select id="movModalidadCambio" class="w-full glass-input rounded-lg px-3 py-2 text-sm">
+                      <option value="FIJO">Fijada en Diario</option>
+                      <option value="NEGOCIADO">Manual / Negociado</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-xs text-slate-400 font-semibold mb-1">Valor Cambio *</label>
+                    <input type="number" step="any" id="movValorCambio" value="1"
+                      class="w-full glass-input rounded-lg px-3 py-2 text-sm" required>
+                  </div>
+                </div>
+
+                <!-- Campos de texto descriptivo -->
+                <div>
+                  <label class="block text-xs text-slate-400 font-semibold mb-1">Concepto *</label>
+                  <input type="text" id="movConcepto" placeholder="Ej: Venta de USDT saldo"
+                    class="w-full glass-input rounded-lg px-3 py-2 text-sm" required>
+                </div>
+                <div>
+                  <label class="block text-xs text-slate-400 font-semibold mb-1">Observaciones</label>
+                  <textarea id="movObservaciones" placeholder="Detalles adicionales de pago"
+                    class="w-full glass-input rounded-lg px-3 py-2 text-sm h-16 resize-none"></textarea>
+                </div>
+
+                <div class="flex gap-2">
+                  <button type="submit" id="btnGuardarMovimiento"
+                    class="flex-1 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-semibold py-2.5 rounded-xl shadow-lg transition">
+                    Guardar Movimiento
+                  </button>
+                  <button type="button" id="btnCancelarMovimiento"
+                    class="bg-slate-800 hover:bg-slate-700 text-slate-400 font-semibold px-4 py-2.5 rounded-xl text-sm transition hidden">
+                    Cancelar
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Tabla e Historial -->
+            <div class="glass-panel lg:col-span-2 p-6 rounded-2xl flex flex-col space-y-4">
+              <!-- Filtros -->
+              <div
+                class="grid grid-cols-1 md:grid-cols-5 gap-3 bg-slate-950/40 p-4 rounded-xl border border-slate-800/80">
+                <div>
+                  <label class="block text-[10px] text-slate-500 font-semibold mb-1">Fecha Contable</label>
+                  <input type="date" id="filtroFecha" class="w-full glass-input rounded-lg px-2 py-1 text-xs">
+                </div>
+                <div>
+                  <label class="block text-[10px] text-slate-500 font-semibold mb-1">Filtrar Cliente</label>
+                  <select id="filtroCliente" class="w-full glass-input rounded-lg px-2 py-1 text-xs">
+                    <option value="">Todos</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-[10px] text-slate-500 font-semibold mb-1">Tipo Movimiento</label>
+                  <select id="filtroTipo" class="w-full glass-input rounded-lg px-2 py-1 text-xs">
+                    <option value="">Todos</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-[10px] text-slate-500 font-semibold mb-1">Buscar Texto (Global)</label>
+                  <input type="text" id="filtroBuscarGlobal" placeholder="Buscar por concepto, obs..."
+                    class="w-full glass-input rounded-lg px-2 py-1 text-xs">
+                </div>
+                <div class="flex items-end gap-2">
+                  <button id="btnFiltrar"
+                    class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold py-2 rounded-lg transition">Filtrar</button>
+                  <button id="btnExportPDF" title="Exportar PDF"
+                    class="bg-rose-700 hover:bg-rose-600 text-white p-2 rounded-lg transition">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </button>
+                  <button id="btnExportExcel" title="Exportar Excel"
+                    class="bg-emerald-700 hover:bg-emerald-600 text-white p-2 rounded-lg transition">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Listado de Movimientos -->
+              <div class="overflow-x-auto border border-slate-800/60 rounded-xl">
+                <table class="w-full text-left border-collapse">
+                  <thead>
+                    <tr class="bg-slate-900/60 text-slate-400 text-xs border-b border-slate-800">
+                      <th class="p-3">Ref/ID</th>
+                      <th class="p-3">Fecha Contable</th>
+                      <th class="p-3">Cliente / Cuenta</th>
+                      <th class="p-3">Tipo</th>
+                      <th class="p-3 text-right">Monto</th>
+                      <th class="p-3">Concepto / E-Com</th>
+                      <th class="p-3 text-center">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tablaMovimientos" class="text-xs divide-y divide-slate-800/40 text-slate-350">
+                    <!-- Dinámico -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3. VIEW: CAMBIOS -->
+        <section id="view-cambios" class="view-section space-y-6">
+          <div class="flex justify-between items-center">
+            <div>
+              <h2 class="text-2xl font-bold text-slate-200">Módulo Cambios y Cotizaciones</h2>
+              <p class="text-slate-400 text-sm">Gestiona cotizaciones oficiales diarias frente a la base de cálculo
+                (USDT)</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+            <!-- Ingreso de Tasa -->
+            <div class="glass-panel p-6 rounded-2xl space-y-4">
+              <h3 class="font-bold text-slate-350 text-md border-b border-slate-800/60 pb-2">Establecer Cotización</h3>
+              <form id="formCambio" class="space-y-4">
+                <input type="hidden" id="cambioId">
+                <div>
+                  <label class="block text-xs text-slate-400 font-semibold mb-1">Par de Divisa *</label>
+                  <select id="cambioPar" class="w-full glass-input rounded-lg px-3 py-2.5 text-sm" required>
+                    <!-- Dinámico de relaciones -->
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs text-slate-400 font-semibold mb-1">Valor de Compra *</label>
+                  <input type="number" step="any" id="cambioCompra" placeholder="0.00"
+                    class="w-full glass-input rounded-lg px-3 py-2.5 text-sm" required>
+                </div>
+                <div>
+                  <label class="block text-xs text-slate-400 font-semibold mb-1">Valor de Venta *</label>
+                  <input type="number" step="any" id="cambioVenta" placeholder="0.00"
+                    class="w-full glass-input rounded-lg px-3 py-2.5 text-sm" required>
+                </div>
+                <div class="flex gap-2">
+                  <button type="submit" id="btnGuardarCambio"
+                    class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-xl shadow-lg transition">
+                    Guardar Cotización
+                  </button>
+                  <button type="button" id="btnCancelarCambio"
+                    class="bg-slate-800 hover:bg-slate-700 text-slate-400 font-semibold px-4 py-3 rounded-xl text-sm transition hidden">
+                    Cancelar
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Historial de Tasas -->
+            <div class="glass-panel lg:col-span-2 p-6 rounded-2xl flex flex-col space-y-4">
+              <h3 class="font-bold text-slate-350 text-md border-b border-slate-800/60 pb-2">Historial Diario de Tasas
+              </h3>
+              <div class="overflow-y-auto max-h-[400px] border border-slate-800/60 rounded-xl">
+                <table class="w-full text-left border-collapse">
+                  <thead>
+                    <tr class="bg-slate-900/60 text-slate-400 text-xs border-b border-slate-800">
+                      <th class="p-3">Fecha Contable</th>
+                      <th class="p-3">Par Divisa</th>
+                      <th class="p-3 text-right">Compra</th>
+                      <th class="p-3 text-right">Venta</th>
+                      <th class="p-3">Registro Sistema</th>
+                      <th class="p-3 text-center">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tablaCambios" class="text-xs divide-y divide-slate-800/40 text-slate-350">
+                    <!-- Dinámico -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 4. VIEW: E-COMMERCE (DEDICADO) -->
+        <section id="view-ecommerce" class="view-section space-y-6">
+          <div class="flex justify-between items-center">
+            <div>
+              <h2 class="text-2xl font-bold text-slate-200">Panel Logístico E-Commerce</h2>
+              <p class="text-slate-400 text-sm">Administración de inventarios, stock y margen comercial</p>
+            </div>
+            <!-- Sub-Navegación E-Commerce -->
+            <div class="flex gap-2 bg-slate-900/80 p-1 rounded-xl border border-slate-800">
+              <button id="btnTabEcoLogistica"
+                class="px-4 py-2 rounded-lg text-xs font-semibold bg-indigo-600/10 text-indigo-400 border border-indigo-500/20 transition">
+                Logística y Rentabilidad
+              </button>
+              <button id="btnTabEcoProductos"
+                class="px-4 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 hover:bg-slate-850 transition">
+                Inventario de Productos
+              </button>
+            </div>
+          </div>
+
+          <!-- SUB-VIEW 1: LOGISTICA Y RENTABILIDAD -->
+          <div id="subview-eco-logistica" class="space-y-6">
+            <!-- Cards de Stock y Volúmenes -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div class="glass-card p-6 rounded-2xl">
+                <div class="text-xs text-slate-500 font-bold uppercase mb-1">Volumen de Compra Stock</div>
+                <div id="ecoKpiVolCompra" class="text-2xl font-bold text-emerald-400">0.00 USDT</div>
+                <p id="ecoKpiCantCompra" class="text-[10px] text-slate-500 mt-1">0 transacciones de compra</p>
+              </div>
+              <div class="glass-card p-6 rounded-2xl">
+                <div class="text-xs text-slate-500 font-bold uppercase mb-1">Volumen de Venta Stock</div>
+                <div id="ecoKpiVolVenta" class="text-2xl font-bold text-sky-400">0.00 USDT</div>
+                <p id="ecoKpiCantVenta" class="text-[10px] text-slate-500 mt-1">0 transacciones de venta</p>
+              </div>
+              <div class="glass-card p-6 rounded-2xl">
+                <div class="text-xs text-slate-500 font-bold uppercase mb-1">Rentabilidad Estimada E-Com</div>
+                <div id="ecoKpiRentabilidad" class="text-2xl font-bold text-indigo-400">0.00 USDT</div>
+                <p class="text-[10px] text-slate-500 mt-1">Margen comercial bruto acumulado</p>
+              </div>
+            </div>
+            <!-- Lista de Productos Operados e Inventario Lógico -->
+            <div class="glass-panel p-6 rounded-2xl space-y-4">
+              <div class="flex justify-between items-center">
+                <h3 class="font-bold text-slate-350 text-md">Registro de Productos y Movimientos de Stock</h3>
+                <input type="text" id="ecoBuscadorProducto" placeholder="Buscar producto..."
+                  class="glass-input rounded-lg px-3 py-1.5 text-xs w-64">
+              </div>
+              <div class="overflow-x-auto border border-slate-800/60 rounded-xl">
+                <table class="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr class="bg-slate-900/60 text-slate-400 border-b border-slate-800">
+                      <th class="p-3">ID Mov</th>
+                      <th class="p-3">Producto / Detalle</th>
+                      <th class="p-3">Operación</th>
+                      <th class="p-3 text-right">Monto Orig.</th>
+                      <th class="p-3 text-right">Cambio Aplicado</th>
+                      <th class="p-3 text-right">Equivalente USDT</th>
+                      <th class="p-3">Fecha Contable</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tablaEcommerceLogistica" class="divide-y divide-slate-800/40 text-slate-350">
+                    <!-- Dinámico -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- SUB-VIEW 2: INVENTARIO DE PRODUCTOS (CRUD) -->
+          <div id="subview-eco-productos" class="grid grid-cols-1 lg:grid-cols-3 gap-6 hidden">
+            <!-- Formulario de Productos -->
+            <div class="glass-panel p-6 rounded-2xl flex flex-col space-y-4 h-fit">
+              <h3 id="formEcoProductoTitulo" class="font-bold text-slate-350 text-md border-b border-slate-800/60 pb-2">
+                Registrar Producto</h3>
+              <form id="formEcoProducto" class="space-y-3">
+                <input type="hidden" id="ecoProductoId">
+                <div>
+                  <label class="block text-xs text-slate-400 font-semibold mb-1">Nombre del Producto *</label>
+                  <input type="text" id="ecoProductoNombre" placeholder="Ej: PlayStation 5 Slim"
+                    class="w-full glass-input rounded-lg px-3 py-2 text-xs" required>
+                </div>
+                <div>
+                  <label class="block text-xs text-slate-400 font-semibold mb-1">Código SKU</label>
+                  <input type="text" id="ecoProductoSku" placeholder="Ej: PS5-SLIM"
+                    class="w-full glass-input rounded-lg px-3 py-2 text-xs">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label class="block text-xs text-slate-400 font-semibold mb-1">Monto Costo *</label>
+                    <input type="number" step="any" id="ecoProductoMontoCosto" placeholder="0.00"
+                      class="w-full glass-input rounded-lg px-3 py-2 text-xs" required>
+                  </div>
+                  <div>
+                    <label class="block text-xs text-slate-400 font-semibold mb-1">Moneda Costo *</label>
+                    <select id="ecoProductoMonedaCosto" class="w-full glass-input rounded-lg px-3 py-2 text-xs"
+                      required>
+                      <!-- Dinámico de monedas -->
+                    </select>
+                  </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label class="block text-xs text-slate-400 font-semibold mb-1">Tasa Cambio *</label>
+                    <input type="number" step="any" id="ecoProductoCambioCosto" placeholder="1.0"
+                      class="w-full glass-input rounded-lg px-3 py-2 text-xs" required>
+                  </div>
+                  <div>
+                    <label class="block text-xs text-slate-400 font-semibold mb-1">Stock Inicial *</label>
+                    <input type="number" id="ecoProductoStock" placeholder="0"
+                      class="w-full glass-input rounded-lg px-3 py-2 text-xs" required>
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-xs text-slate-400 font-semibold mb-1">Observaciones</label>
+                  <textarea id="ecoProductoObservaciones" placeholder="Detalles o especificaciones"
+                    class="w-full glass-input rounded-lg px-3 py-2 text-xs h-16 resize-none"></textarea>
+                </div>
+                <div class="flex gap-2">
+                  <button type="submit" id="btnGuardarEcoProducto"
+                    class="flex-1 bg-indigo-650 hover:bg-indigo-600 text-white font-semibold py-2 rounded-xl text-xs transition">
+                    Guardar Producto
+                  </button>
+                  <button type="button" id="btnCancelarEcoProducto"
+                    class="bg-slate-800 hover:bg-slate-700 text-slate-400 font-semibold px-4 py-2 rounded-xl text-xs transition hidden">
+                    Cancelar
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Tabla de Inventario de Productos -->
+            <div class="glass-panel lg:col-span-2 p-6 rounded-2xl flex flex-col space-y-4">
+              <div class="flex justify-between items-center border-b border-slate-800/60 pb-2">
+                <h3 class="font-bold text-slate-350 text-md">Inventario y Catálogo General</h3>
+                <div class="flex gap-2">
+                  <button id="btnDescargarCatalogoPDF"
+                    class="bg-rose-700 hover:bg-rose-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition flex items-center gap-1">
+                    <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg> Catálogo PDF
+                  </button>
+                </div>
+              </div>
+              <div class="overflow-y-auto max-h-[400px] border border-slate-800/60 rounded-xl">
+                <table class="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr class="bg-slate-900/60 text-slate-400 border-b border-slate-800">
+                      <th class="p-3">SKU</th>
+                      <th class="p-3">Nombre del Producto</th>
+                      <th class="p-3 text-right">Existencias</th>
+                      <th class="p-3 text-right">Costo Unit. Original</th>
+                      <th class="p-3 text-right">Costo Unit. Equiv.</th>
+                      <th class="p-3 text-center">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tablaInventarioProductos" class="divide-y divide-slate-800/40 text-slate-350">
+                    <!-- Dinámico -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 5. VIEW: CLIENTES Y CUENTAS -->
+        <section id="view-clientes" class="view-section space-y-6">
+          <div class="flex justify-between items-center">
+            <div>
+              <h2 class="text-2xl font-bold text-slate-200">Gestión de Clientes y Cuentas</h2>
+              <p class="text-slate-400 text-sm">Administra el padrón de clientes, sus cuentas bancarias/wallets y sus
+                estados</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+            <!-- PANEL CLIENTES (CRUD) -->
+            <div class="glass-panel p-6 rounded-2xl flex flex-col space-y-4">
+              <h3 class="font-bold text-slate-350 text-md border-b border-slate-800/60 pb-2">Clientes</h3>
+
+              <!-- Formulario de Clientes -->
+              <form id="formCliente" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <input type="hidden" id="clienteId">
+                <div class="md:col-span-2">
+                  <label class="block text-[10px] text-slate-400 font-semibold mb-1">Nombre Completo *</label>
+                  <input type="text" id="clienteNombre" placeholder="Ej: Fenix Trading LLC"
+                    class="w-full glass-input rounded-lg px-3 py-2 text-xs" required>
+                </div>
+                <div>
+                  <label class="block text-[10px] text-slate-400 font-semibold mb-1">Documento / RUC *</label>
+                  <input type="text" id="clienteDocumento" placeholder="Ej: 80112233-4"
+                    class="w-full glass-input rounded-lg px-3 py-2 text-xs" required>
+                </div>
+                <div>
+                  <label class="block text-[10px] text-slate-400 font-semibold mb-1">Tipo de Cliente</label>
+                  <select id="clienteTipo" class="w-full glass-input rounded-lg px-3 py-2 text-xs">
+                    <option value="">Seleccionar</option>
+                    <option value="OCASIONAL">OCASIONAL</option>
+                    <option value="MINORISTA">MINORISTA</option>
+                    <option value="MAYORISTA">MAYORISTA</option>
+                    <option value="PROVEEDOR">PROVEEDOR</option>
+                    <option value="SOCIOS">SOCIOS</option>
+                    <option value="OTRO">OTRO</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-[10px] text-slate-400 font-semibold mb-1">Teléfono</label>
+                  <input type="text" id="clienteTelefono" placeholder="+595 981..."
+                    class="w-full glass-input rounded-lg px-3 py-2 text-xs">
+                </div>
+                <div>
+                  <label class="block text-[10px] text-slate-400 font-semibold mb-1">Correo Electrónico</label>
+                  <input type="email" id="clienteMail" placeholder="contacto@fenix.com"
+                    class="w-full glass-input rounded-lg px-3 py-2 text-xs">
+                </div>
+                <div>
+                  <label class="block text-[10px] text-slate-400 font-semibold mb-1">Status Cliente</label>
+                  <select id="clienteStatus" class="w-full glass-input rounded-lg px-3 py-2 text-xs">
+                    <option value="">Seleccionar</option>
+                    <option value="ACTIVO">ACTIVO</option>
+                    <option value="INACTIVO">INACTIVO</option>
+                  </select>
+                </div>
+                <div class="md:col-span-2">
+                  <label class="block text-[10px] text-slate-400 font-semibold mb-1">Observaciones</label>
+                  <input type="text" id="clienteObservaciones" placeholder="Anotaciones adicionales"
+                    class="w-full glass-input rounded-lg px-3 py-2 text-xs">
+                </div>
+                <div class="md:col-span-2 flex gap-2">
+                  <button type="submit" id="btnGuardarCliente"
+                    class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2 rounded-lg text-xs transition">
+                    Guardar Cliente
+                  </button>
+                  <button type="button" id="btnCancelarCliente"
+                    class="bg-slate-800 hover:bg-slate-700 text-slate-400 font-semibold px-4 py-2 rounded-lg text-xs transition">
+                    Limpiar
+                  </button>
+                </div>
+              </form>
+
+              <!-- Tabla de Clientes -->
+              <div class="overflow-y-auto max-h-80 border border-slate-800/60 rounded-xl">
+                <table class="w-full text-left border-collapse">
+                  <thead>
+                    <tr class="bg-slate-900/60 text-slate-400 text-xs border-b border-slate-800">
+                      <th class="p-3">Nombre</th>
+                      <th class="p-3">Documento (RUC)</th>
+                      <th class="p-3">Tipo</th>
+                      <th class="p-3">Teléfono</th>
+                      <th class="p-3">Correo</th>
+                      <th class="p-3">Estado</th>
+                      <th class="p-3 text-center">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tablaClientes" class="text-xs divide-y divide-slate-800/40 text-slate-350">
+                    <!-- Dinámico -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- PANEL CUENTAS (Cambiado término de subcuenta a cuentas) -->
+            <div class="glass-panel p-6 rounded-2xl flex flex-col space-y-4">
+              <h3 class="font-bold text-slate-350 text-md border-b border-slate-800/60 pb-2">
+                Cuentas de: <span id="cuentaClienteActivo" class="text-indigo-400 font-bold">Seleccione un
+                  cliente</span>
+              </h3>
+
+              <!-- Formulario de Cuentas -->
+              <form id="formCuenta" class="grid grid-cols-1 md:grid-cols-2 gap-3 hidden">
+                <input type="hidden" id="cuentaId">
+                <div>
+                  <label class="block text-[10px] text-slate-400 font-semibold mb-1">Nombre de Cuenta / Banco *</label>
+                  <input type="text" id="cuentaNombre" placeholder="Ej: Sudameris USD, Wallet USDT"
+                    class="w-full glass-input rounded-lg px-3 py-2 text-xs" required>
+                </div>
+                <div>
+                  <label class="block text-[10px] text-slate-400 font-semibold mb-1">Tipo Cuenta</label>
+                  <select id="cuentaTipo" class="w-full glass-input rounded-lg px-3 py-2 text-xs">
+                    <option value="">Seleccionar</option>
+                    <option value="EFECTIVO">EFECTIVO / CAJA</option>
+                    <option value="BANCO">CUENTA BANCARIA</option>
+                    <option value="CRIPTO">WALLET / DEPOSITO BLOCKCHAIN</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-[10px] text-slate-400 font-semibold mb-1">Divisa / Moneda Principal *</label>
+                  <select id="cuentaMoneda" class="w-full glass-input rounded-lg px-3 py-2 text-xs">
+                    <!-- Dinámico de monedas -->
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-[10px] text-slate-400 font-semibold mb-1">Referencia</label>
+                  <input type="text" id="cuentaReferencia" placeholder="CBU, NRO, ALIAS, KEY"
+                    class="w-full glass-input rounded-lg px-3 py-2 text-xs">
+                </div>
+                <div>
+                  <label class="block text-[10px] text-slate-400 font-semibold mb-1">Observaciones</label>
+                  <input type="text" id="cuentaObservaciones" placeholder="Cualquier aclaración de la cuenta"
+                    class="w-full glass-input rounded-lg px-3 py-2 text-xs">
+                </div>
+                <div>
+                  <label class="block text-[10px] text-slate-400 font-semibold mb-1">Estado de Cuenta</label>
+                  <select id="cuentaStatus" class="w-full glass-input rounded-lg px-3 py-2 text-xs">
+                    <option value="">Seleccionar</option>
+                    <option value="ACTIVO">ACTIVO</option>
+                    <option value="INACTIVO">INACTIVO</option>
+                  </select>
+                </div>
+                <div class="md:col-span-2 flex gap-2">
+                  <button type="submit" id="btnGuardarCuenta"
+                    class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2 rounded-lg text-xs transition">
+                    Guardar Cuenta
+                  </button>
+                  <button type="button" id="btnCancelarCuenta"
+                    class="bg-slate-800 hover:bg-slate-700 text-slate-400 font-semibold px-4 py-2 rounded-lg text-xs transition hidden">
+                    Cancelar Edición
+                  </button>
+                </div>
+              </form>
+
+              <!-- Tabla de Cuentas -->
+              <div class="overflow-y-auto max-h-96 border border-slate-800/60 rounded-xl">
+                <table class="w-full text-left border-collapse">
+                  <thead>
+                    <tr class="bg-slate-900/60 text-slate-400 text-xs border-b border-slate-800">
+                      <th class="p-3">Nombre</th>
+                      <th class="p-3">Moneda</th>
+                      <th class="p-3">Referencia</th>
+                      <th class="p-3">Estado</th>
+                      <th class="p-3 text-center">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tablaCuentas" class="text-xs divide-y divide-slate-800/40 text-slate-350">
+                    <tr>
+                      <td colspan="5" class="p-4 text-center text-slate-500">Seleccione un cliente para ver y gestionar
+                        sus cuentas</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- 6. VIEW: REPORTES -->
+        <section id="view-reportes" class="view-section space-y-6">
+          <div class="flex justify-between items-center">
+            <div>
+              <h2 class="text-2xl font-bold text-slate-200">Módulo de Reportes Contables</h2>
+              <p class="text-slate-400 text-sm">Genere, filtre y exporte balances consolidados en USDT</p>
+            </div>
+          </div>
+
+          <!-- Filtros de Reporte -->
+          <div class="glass-panel p-6 rounded-2xl grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label class="block text-xs text-slate-400 font-semibold mb-1">Tipo de Filtro Temporal</label>
+              <select id="repFiltroTiempo" class="w-full glass-input rounded-lg px-3 py-2 text-sm">
+                <option value="">Seleccionar</option>
+                <option value="dia">Por Día Específico</option>
+                <option value="mes">Por Mes Comercial</option>
+                <option value="rango">Rango Personalizado</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs text-slate-400 font-semibold mb-1">Fecha / Periodo</label>
+              <input type="date" id="repFechaUnica" class="w-full glass-input rounded-lg px-3 py-2 text-sm">
+              <div id="repRangoWrapper" class="hidden flex gap-1 mt-1">
+                <input type="date" id="repFechaInicio" class="w-1/2 glass-input rounded-lg px-2 py-1 text-xs">
+                <input type="date" id="repFechaFin" class="w-1/2 glass-input rounded-lg px-2 py-1 text-xs">
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs text-slate-400 font-semibold mb-1">Filtrar Cliente</label>
+              <select id="repCliente" class="w-full glass-input rounded-lg px-3 py-2 text-sm">
+                <!-- Dinámico -->
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs text-slate-400 font-semibold mb-1">Canal / Transacción</label>
+              <select id="repTipo" class="w-full glass-input rounded-lg px-3 py-2 text-sm">
+                <option value="TODOS">Todos</option>
+                <option value="ECOMMERCE">Sólo E-Commerce</option>
+                <option value="COMPRA">Sólo Compras</option>
+                <option value="VENTA">Sólo Ventas</option>
+                <option value="GASTO">Sólo Gastos</option>
+                <option value="OTROS">Otros / No E-Commerce</option>
+              </select>
+            </div>
+            <div class="md:col-span-4 flex justify-end gap-3 pt-2">
+              <button id="btnGenerarReporte"
+                class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-6 py-2.5 rounded-xl shadow-lg transition">Compilar
+                Reporte</button>
+              <button id="btnExportPDFReporte"
+                class="bg-rose-700 hover:bg-rose-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-lg transition flex items-center gap-1">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg> PDF
+              </button>
+              <button id="btnExportExcelReporte"
+                class="bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-lg transition flex items-center gap-1">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg> Excel
+              </button>
+            </div>
+          </div>
+
+          <!-- Resultados y Balances -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="glass-card p-6 rounded-2xl border-l-4 border-l-indigo-500">
+              <div class="text-xs text-slate-500 font-bold uppercase tracking-wider">Flujo Neto Compilado</div>
+              <div id="repValFlujo" class="text-2xl font-bold text-slate-100 mt-1">0.00 USDT</div>
+            </div>
+            <div class="glass-card p-6 rounded-2xl border-l-4 border-l-emerald-500">
+              <div class="text-xs text-slate-500 font-bold uppercase tracking-wider">Total Ingresos</div>
+              <div id="repValIngresos" class="text-2xl font-bold text-emerald-400 mt-1">0.00 USDT</div>
+            </div>
+            <div class="glass-card p-6 rounded-2xl border-l-4 border-l-rose-500">
+              <div class="text-xs text-slate-500 font-bold uppercase tracking-wider">Total Egresos/Gastos</div>
+              <div id="repValEgresos" class="text-2xl font-bold text-rose-500 mt-1">0.00 USDT</div>
+            </div>
+
+            <!-- Tabla de Datos Compilados -->
+            <div class="glass-panel md:col-span-3 p-6 rounded-2xl space-y-4">
+              <h3 class="font-bold text-slate-350 text-md">Desglose de Operaciones</h3>
+              <div class="overflow-x-auto border border-slate-800/60 rounded-xl">
+                <table class="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr class="bg-slate-900/60 text-slate-400 border-b border-slate-800">
+                      <th class="p-3">ID</th>
+                      <th class="p-3">Fecha Contable</th>
+                      <th class="p-3">Cliente / Cuenta</th>
+                      <th class="p-3">Tipo</th>
+                      <th class="p-3 text-right">Monto Original</th>
+                      <th class="p-3 text-right">Equivalente USDT</th>
+                      <th class="p-3">Concepto</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tablaReporteResultados" class="divide-y divide-slate-800/40 text-slate-350">
+                    <tr>
+                      <td colspan="7" class="p-4 text-center text-slate-500">Haga clic en 'Compilar Reporte' para cargar
+                        los datos</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- VIEW: GASTOS PERSONALES (NUEVO) -->
+        <section id="view-gastos" class="view-section space-y-6">
+          <div class="flex justify-between items-center">
+            <div>
+              <h2 class="text-2xl font-bold text-slate-200">Módulo Gastos Personales</h2>
+              <p class="text-slate-400 text-sm">Registra y controla los gastos personales de los socios e integrantes
+                del equipo</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Formulario de Gastos -->
+            <div class="glass-panel p-6 rounded-2xl flex flex-col space-y-4">
+              <h3 id="gastoFormTitulo" class="font-bold text-slate-350 text-md border-b border-slate-800/60 pb-2">
+                Registrar Gasto</h3>
+              <form id="formGastoPersonal" class="space-y-4">
+                <input type="hidden" id="gastoId">
+
+                <div>
+                  <label class="block text-xs text-slate-400 font-semibold mb-1">Tipo de Operación *</label>
+                  <select id="gastoTipoOperacion" class="w-full glass-input rounded-lg px-3 py-2 text-sm" required>
+                    <option value="GASTO_PERSONAL">Retiro / Gasto Personal</option>
+                    <option value="DEPOSITO_PERSONAL">Depósito / Ingreso de Fondos</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label id="lblGastoMonto" class="block text-xs text-slate-400 font-semibold mb-1">Monto del Gasto
+                    *</label>
+                  <input type="number" step="any" id="gastoMonto" placeholder="0.00"
+                    class="w-full glass-input rounded-lg px-3 py-2 text-sm" required>
+                </div>
+
+                <div>
+                  <label class="block text-xs text-slate-400 font-semibold mb-1">Moneda del Gasto *</label>
+                  <select id="gastoMoneda" class="w-full glass-input rounded-lg px-3 py-2 text-sm" required>
+                    <!-- Dinámico -->
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block text-xs text-slate-400 font-semibold mb-1">Cuenta de Origen (Gastos Personales)
+                    *</label>
+                  <select id="gastoMiCuenta" class="w-full glass-input rounded-lg px-3 py-2 text-sm" required>
+                    <!-- Dinámico: Cuentas propias de gastos -->
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block text-xs text-slate-400 font-semibold mb-1">Concepto / Detalle *</label>
+                  <input type="text" id="gastoConcepto" placeholder="Ej: Almuerzo directivos, Suscripción personal"
+                    class="w-full glass-input rounded-lg px-3 py-2 text-sm" required>
+                </div>
+
+                <div>
+                  <label class="block text-xs text-slate-400 font-semibold mb-1">Observaciones</label>
+                  <textarea id="gastoObservaciones" placeholder="Detalles de pago o reintegro"
+                    class="w-full glass-input rounded-lg px-3 py-2 text-sm h-20 resize-none"></textarea>
+                </div>
+
+                <div class="flex gap-2">
+                  <button type="submit" id="btnGuardarGasto"
+                    class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-xl text-sm transition">
+                    Guardar Gasto
+                  </button>
+                  <button type="button" id="btnCancelarGasto"
+                    class="bg-slate-800 hover:bg-slate-700 text-slate-400 font-semibold px-4 py-2.5 rounded-xl text-sm transition hidden">
+                    Cancelar
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Tabla de Gastos -->
+            <div class="glass-panel lg:col-span-2 p-6 rounded-2xl flex flex-col space-y-4">
+              <h3 class="font-bold text-slate-350 text-md border-b border-slate-800/60 pb-2">Bitácora de Gastos
+                Personales</h3>
+              <div class="overflow-y-auto max-h-[420px] border border-slate-800/60 rounded-xl">
+                <table class="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr class="bg-slate-900/60 text-slate-400 border-b border-slate-800">
+                      <th class="p-3">Ref</th>
+                      <th class="p-3">Fecha</th>
+                      <th class="p-3">Cuenta Origen</th>
+                      <th class="p-3">Detalle</th>
+                      <th class="p-3 text-right">Monto</th>
+                      <th class="p-3 text-right">Equivalente USDT</th>
+                      <th class="p-3 text-center">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tablaGastosPersonales" class="divide-y divide-slate-800/40 text-slate-350">
+                    <!-- Dinámico -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 7. VIEW: OPCIONES (REDISEÑADO) -->
+        <section id="view-opciones" class="view-section space-y-6">
+          <div>
+            <h2 class="text-2xl font-bold text-slate-200">Ajustes del Sistema</h2>
+            <p class="text-slate-400 text-sm">Administración de catálogos corporativos, seguridad y automatizaciones</p>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+
+            <!-- AJUSTES DEL SISTEMA (Contraseña y Automatizaciones) -->
+            <div class="glass-panel p-6 rounded-2xl space-y-6">
+              <div>
+                <h3 class="font-bold text-slate-350 text-sm border-b border-slate-800/60 pb-2 mb-3">Ajustes del Sistema
+                </h3>
+
+                <!-- Habilitar Cierre Automático Diario -->
+                <div class="space-y-4 mb-4">
+                  <div class="flex items-center justify-between">
+                    <label for="chkCierreAuto" class="text-xs font-semibold text-slate-300">Cierre Diario
+                      Automático</label>
+                    <input type="checkbox" id="chkCierreAuto"
+                      class="h-4 w-4 accent-indigo-600 bg-slate-900 border-slate-800 rounded">
+                  </div>
+                  <div>
+                    <label class="block text-[10px] text-slate-500 font-semibold mb-1">Hora de Cierre Contable
+                      (HH:MM)</label>
+                    <input type="time" id="timeCierreAuto" class="w-full glass-input rounded px-3 py-1.5 text-xs">
+                  </div>
+                </div>
+
+                <!-- Habilitar Cierre Mensual -->
+                <div class="space-y-4 border-t border-slate-800/40 pt-4">
+                  <div class="flex items-center justify-between">
+                    <label for="chkCierreMensual" class="text-xs font-semibold text-slate-300">Bloqueo de Mes
+                      Cerrado</label>
+                    <input type="checkbox" id="chkCierreMensual"
+                      class="h-4 w-4 accent-indigo-600 bg-slate-900 border-slate-800 rounded">
+                  </div>
+                  <div>
+                    <label class="block text-[10px] text-slate-500 font-semibold mb-1">Día del Mes de Cierre (Ej:
+                      30)</label>
+                    <input type="number" min="1" max="31" id="diaCierreMensual" placeholder="Día"
+                      class="w-full glass-input rounded px-3 py-1.5 text-xs">
+                  </div>
+                </div>
+
+                <!-- Buscar Actualizaciones al Iniciar -->
+                <div class="flex items-center justify-between border-t border-slate-800/40 pt-4">
+                  <div>
+                    <label for="chkUpdatesAuto" class="text-xs font-semibold text-slate-300">Buscar Actualizaciones</label>
+                    <p class="text-[9px] text-slate-500 mt-0.5">Buscar actualizaciones al abrir la app</p>
+                  </div>
+                  <input type="checkbox" id="chkUpdatesAuto"
+                    class="h-4 w-4 accent-indigo-600 bg-slate-900 border-slate-800 rounded">
+                </div>
+              </div>
+
+              <!-- Cambiar Clave Maestra -->
+              <div class="border-t border-slate-800/65 pt-4">
+                <h3 class="font-bold text-slate-350 text-sm border-b border-slate-800/60 pb-2 mb-3">Clave de Seguridad
+                </h3>
+                <form id="formCambiarClave" class="space-y-3">
+                  <div>
+                    <label class="block text-[10px] text-slate-400 font-semibold mb-1">Nueva Clave de Acceso</label>
+                    <input type="password" id="optNuevaClave" placeholder="Escriba nueva clave"
+                      class="w-full glass-input rounded-lg px-3 py-2 text-xs" required>
+                  </div>
+                  <button type="submit"
+                    class="w-full bg-rose-700 hover:bg-rose-600 text-white font-semibold py-2 rounded-lg text-xs transition">
+                    Actualizar Contraseña
+                  </button>
+                </form>
+              </div>
+
+              <!-- Mantenimiento - Copia de Seguridad -->
+              <div class="border-t border-slate-800/65 pt-4">
+                <h3 class="font-bold text-slate-350 text-sm border-b border-slate-800/60 pb-2 mb-3">Respaldos</h3>
+                <button id="btnBackupLocal"
+                  class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2 rounded-lg text-xs transition flex items-center justify-center gap-2">
+                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                  </svg>
+                  Respaldar base de datos
+                </button>
+                <div class="flex gap-2">
+                  <button id="btnGenerarSimulacion"
+                    class="flex-1 bg-indigo-650 hover:bg-indigo-600 text-white font-semibold py-2 rounded-lg text-[10px] transition">Cargar
+                    Datos Prueba</button>
+                  <button id="btnLimpiarSimulacion"
+                    class="flex-1 bg-slate-800 hover:bg-slate-700 text-rose-400 font-semibold py-2 rounded-lg text-[10px] transition">Limpiar
+                    Prueba</button>
+                </div>
+                <div id="backupStatus" class="mt-2 text-center text-[10px] text-slate-500 font-medium"></div>
+              </div>
+            </div>
+
+            <!-- SINCRONIZACIÓN EN LA NUBE (Google Drive) -->
+            <div class="glass-panel p-6 rounded-2xl space-y-6">
+              <div class="border-b border-slate-800/60 pb-2 mb-3 flex items-center justify-between">
+                <h3 class="font-bold text-slate-350 text-sm">Sincronización en la Nube</h3>
+                <span id="driveBadgeEstado"
+                  class="px-2 py-0.5 rounded text-[8px] font-bold bg-rose-955 text-rose-455 border border-rose-900">DESCONECTADO</span>
+              </div>
+              <p class="text-slate-400 text-[10px] leading-relaxed">
+                Vincule su cuenta de Google Drive para respaldar automáticamente y compartir la base de datos entre
+                diferentes computadoras.
+              </p>
+
+              <!-- Conexión Cuenta de Google -->
+              <div class="space-y-3">
+                <div id="driveUserContainer"
+                  class="hidden text-xs text-slate-300 font-semibold bg-slate-900 border border-slate-800 p-2.5 rounded-lg flex items-center justify-between">
+                  <div class="truncate">
+                    <div class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Cuenta Google Vinc.</div>
+                    <span id="driveUserEmail">correo@ejemplo.com</span>
+                  </div>
+                  <div class="h-2 w-2 rounded-full bg-emerald-450" title="Activo"></div>
+                </div>
+
+                <button id="btnDriveConectar"
+                  class="w-full bg-indigo-650 hover:bg-indigo-600 text-white font-semibold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-2">
+                  <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                    <path
+                      d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.114-5.18 4.114-3.478 0-6.3-2.823-6.3-6.3 0-3.478 2.822-6.3 6.3-6.3 1.606 0 3.011.603 4.1 1.567l3.078-3.078C18.995 2.223 15.894 1 12.24 1 6.033 1 1 6.033 1 12.24s5.033 11.24 11.24 11.24c6.478 0 10.793-4.537 10.793-11 0-.746-.08-1.484-.22-2.195H12.24z" />
+                  </svg>
+                  Conectar Cuenta de Google
+                </button>
+              </div>
+
+              <!-- Sincronización Automática Toggle -->
+              <div class="flex items-center justify-between border-t border-slate-800/40 pt-4">
+                <div>
+                  <label for="chkDriveSyncAuto" class="text-xs font-semibold text-slate-300">Sincronización
+                    Automática</label>
+                  <p class="text-[9px] text-slate-500 mt-0.5">Respaldar al cerrar operaciones del día</p>
+                </div>
+                <input type="checkbox" id="chkDriveSyncAuto"
+                  class="h-4 w-4 accent-indigo-600 bg-slate-900 border-slate-800 rounded">
+              </div>
+
+              <!-- Acciones Manuales -->
+              <div id="driveAccionesManuales"
+                class="space-y-2 border-t border-slate-800/40 pt-4 opacity-50 pointer-events-none transition duration-200">
+                <button id="btnDriveSubirAhora"
+                  class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2 rounded-lg text-xs transition flex items-center justify-center gap-1.5">
+                  <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                  </svg>
+                  Subir Respaldo Ahora
+                </button>
+                <button id="btnDriveDescargarAhora"
+                  class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2 rounded-lg text-xs transition flex items-center justify-center gap-1.5">
+                  <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  Descargar Última Base de Datos
+                </button>
+              </div>
+
+              <!-- Ajustes de Credenciales (Desplegable) -->
+              <details class="border-t border-slate-800/40 pt-4">
+                <summary
+                  class="text-[10px] text-slate-500 font-semibold hover:text-slate-350 cursor-pointer select-none">
+                  Credenciales API Personalizadas</summary>
+                <div class="space-y-3 pt-3">
+                  <!-- Guía de Configuración -->
+                  <div class="bg-indigo-950/20 border border-indigo-500/20 rounded-xl p-3.5 text-[10px] text-slate-350 leading-relaxed mb-3 space-y-2 select-text">
+                    <span class="font-bold text-indigo-400 block text-xs mb-1">Guía para configurar su Nube (Google Cloud):</span>
+                    <ol class="list-decimal pl-4 space-y-1.5">
+                      <li>Acceda a <a href="https://console.cloud.google.com/" target="_blank" class="text-indigo-400 hover:underline font-bold">Google Cloud Console</a> e inicie sesión.</li>
+                      <li>Cree un proyecto nuevo (ej: <span class="text-slate-100 font-mono">FENIX Suite Sync</span>).</li>
+                      <li>Vaya a la <strong>Biblioteca de APIs</strong> y active la API llamada <strong>Google Drive API</strong>.</li>
+                      <li>Configure la <strong>Pantalla de consentimiento de OAuth</strong> (Tipo de usuario: <strong>Externo</strong>, ingrese datos de soporte y guarde).</li>
+                      <li><strong>Paso Crítico</strong>: En la sección <strong>Usuarios de prueba (Test Users)</strong> agregue el correo de Google con el que iniciará sesión.</li>
+                      <li>Vaya a <strong>Credenciales</strong> &gt; <strong>Crear credenciales</strong> &gt; <strong>ID de cliente de OAuth</strong>. Elija tipo de aplicación: <strong class="text-slate-200">Aplicación de escritorio (Desktop App)</strong>.</li>
+                      <li>Copie el <strong>Client ID</strong> y <strong>Client Secret</strong> generados, colóquelos abajo, haga clic en <strong>Guardar Credenciales</strong> y luego conecte su cuenta.</li>
+                    </ol>
+                  </div>
+                  <div>
+                    <label class="block text-[9px] text-slate-500 font-semibold mb-1">Google Client ID</label>
+                    <input type="text" id="txtDriveClientId" placeholder="ID de cliente de Google Cloud"
+                      class="w-full glass-input rounded px-2.5 py-1.5 text-[10px]">
+                  </div>
+                  <div>
+                    <label class="block text-[9px] text-slate-500 font-semibold mb-1">Google Client Secret</label>
+                    <input type="password" id="txtDriveClientSecret" placeholder="Secreto de cliente de Google Cloud"
+                      class="w-full glass-input rounded px-2.5 py-1.5 text-[10px]">
+                  </div>
+                  <button id="btnGuardarCredencialesDrive"
+                    class="w-full bg-indigo-650/20 hover:bg-indigo-650/40 text-indigo-400 text-[10px] font-semibold py-1.5 rounded transition">Guardar
+                    Credenciales</button>
+                </div>
+              </details>
+            </div>
+
+            <!-- AJUSTES DE USUARIO (Datos Corporativos no-editables por accidente) -->
+            <div class="glass-panel p-6 rounded-2xl space-y-4">
+              <div class="flex justify-between items-center border-b border-slate-800/60 pb-2">
+                <h3 class="font-bold text-slate-350 text-sm">Datos Corporativos</h3>
+                <button id="btnEditarDatosEmpresa"
+                  class="text-indigo-400 hover:text-indigo-300 font-semibold text-xs flex items-center gap-1">
+                  <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                  </svg> Editar
+                </button>
+              </div>
+              <div class="space-y-4 text-xs">
+                <div>
+                  <span class="block text-slate-500 font-semibold uppercase tracking-wider text-[10px]">Razón Social /
+                    Nombre</span>
+                  <div id="lblEmpresaNombre" class="text-slate-200 font-bold mt-1 text-sm">--</div>
+                </div>
+                <div>
+                  <span class="block text-slate-500 font-semibold uppercase tracking-wider text-[10px]">Identificación
+                    Fiscal / RUC</span>
+                  <div id="lblEmpresaRuc" class="text-slate-200 font-bold mt-1 text-sm">--</div>
+                </div>
+                <div>
+                  <span class="block text-slate-500 font-semibold uppercase tracking-wider text-[10px]">Correo
+                    Electrónico Contable</span>
+                  <div id="lblEmpresaEmail" class="text-slate-200 font-bold mt-1 text-sm">--</div>
+                </div>
+                <div>
+                  <span class="block text-slate-500 font-semibold uppercase tracking-wider text-[10px]">Teléfono
+                    Administración</span>
+                  <div id="lblEmpresaTelefono" class="text-slate-200 font-bold mt-1 text-sm">--</div>
+                </div>
+                <div>
+                  <span class="block text-slate-500 font-semibold uppercase tracking-wider text-[10px]">Moneda Principal
+                    del Sistema</span>
+                  <div id="lblEmpresaMoneda" class="text-indigo-400 font-bold mt-1 text-sm">--</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- MIS CUENTAS PROPIAS -->
+            <div class="glass-panel p-6 rounded-2xl space-y-4">
+              <div class="flex justify-between items-center border-b border-slate-800/60 pb-2">
+                <h3 class="font-bold text-slate-350 text-sm">Mis Cuentas Propias</h3>
+                <button type="button" id="btnNuevaMiCuenta"
+                  class="bg-indigo-650 hover:bg-indigo-600 text-white font-semibold px-2.5 py-1 rounded text-xs transition">Nueva</button>
+              </div>
+              <div class="overflow-y-auto max-h-48 border border-slate-900 rounded-lg">
+                <table class="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr class="bg-slate-950/60 border-b border-slate-800 text-slate-400">
+                      <th class="p-2">Nombre / Banco</th>
+                      <th class="p-2">Moneda</th>
+                      <th class="p-2 text-right">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tablaMisCuentas" class="divide-y divide-slate-850/50">
+                    <!-- Dinámico -->
+                  </tbody>
+                </table>
+              </div>
+              <!-- Selectores de cuenta principal y de gastos personales -->
+              <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800/60">
+                <div>
+                  <label class="block text-[9px] text-slate-500 font-semibold mb-0.5">Cta Principal</label>
+                  <select id="selCtaPrincipalComercial"
+                    class="w-full glass-input rounded px-2 py-1 text-[11px]"></select>
+                </div>
+                <div>
+                  <label class="block text-[9px] text-slate-500 font-semibold mb-0.5">Cta Gastos Pers</label>
+                  <select id="selCtaGastosPersonales" class="w-full glass-input rounded px-2 py-1 text-[11px]"></select>
+                </div>
+              </div>
+            </div>
+
+            <!-- AJUSTES ADMINISTRATIVOS (CRUD de monedas, relaciones, y tipos transaccion) -->
+            <div class="glass-panel p-6 rounded-2xl space-y-6">
+              <!-- 1. Gestión de Tipos de Transacción -->
+              <div>
+                <h3 class="font-bold text-slate-350 text-sm border-b border-slate-800/60 pb-2 mb-3">Tipos de Transacción
+                </h3>
+                <form id="formAdminTipo" class="flex flex-col gap-2 mb-3">
+                  <div class="flex gap-2">
+                    <input type="text" id="adminTipoNombre" placeholder="NUEVO_TIPO"
+                      class="flex-1 glass-input rounded px-2.5 py-1 text-xs" required>
+                    <select id="adminTipoCategoria" class="glass-input rounded px-2.5 py-1 text-xs font-semibold">
+                      <option value="EGRESO">EGRESO</option>
+                      <option value="INGRESO">INGRESO</option>
+                    </select>
+                  </div>
+                  <button type="submit"
+                    class="w-full bg-indigo-650 hover:bg-indigo-600 text-white text-xs font-semibold py-1.5 rounded transition">Agregar
+                    Tipo</button>
+                </form>
+                <div class="overflow-y-auto max-h-24 border border-slate-900 rounded-lg">
+                  <ul id="listaAdminTipos" class="text-xs divide-y divide-slate-850/50">
+                    <!-- Dinámico -->
+                  </ul>
+                </div>
+              </div>
+
+              <!-- 2. Gestión de Monedas -->
+              <div class="border-t border-slate-800/60 pt-4">
+                <h3 class="font-bold text-slate-350 text-sm border-b border-slate-800/60 pb-2 mb-3">Monedas</h3>
+                <form id="formAdminMoneda" class="grid grid-cols-2 gap-2 mb-3">
+                  <input type="hidden" id="adminMonedaId">
+                  <div class="col-span-2">
+                    <input type="text" id="adminMonedaNombre" placeholder="Nombre (Ej: Guaraní)"
+                      class="w-full glass-input rounded px-2 py-1 text-xs" required>
+                  </div>
+                  <div>
+                    <input type="text" id="adminMonedaSiglas" placeholder="Siglas (Ej: PYG)"
+                      class="w-full glass-input rounded px-2 py-1 text-xs" required>
+                  </div>
+                  <div>
+                    <select id="adminMonedaTipo" class="w-full glass-input rounded px-2 py-1 text-xs">
+                      <option value="">Seleccionar</option>
+                      <option value="FIAT">FIAT</option>
+                      <option value="CRIPTO">CRIPTO</option>
+                    </select>
+                  </div>
+                  <div>
+                    <select id="adminMonedaStatus" class="w-full glass-input rounded px-2 py-1 text-xs">
+                      <option value="">Seleccionar</option>
+                      <option value="ACTIVO">ACTIVO</option>
+                      <option value="INACTIVO">INACTIVO</option>
+                    </select>
+                  </div>
+                  <div class="flex items-end">
+                    <button type="submit" id="btnAdminGuardarMoneda"
+                      class="w-full bg-emerald-650 hover:bg-emerald-600 text-white text-xs font-semibold py-1 rounded">Guardar</button>
+                  </div>
+                </form>
+                <div class="overflow-y-auto max-h-32 border border-slate-900 rounded-lg">
+                  <table class="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr class="bg-slate-900 text-slate-500 border-b border-slate-850">
+                        <th class="p-1">Sigla</th>
+                        <th class="p-1">Nombre</th>
+                        <th class="p-1 text-center">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody id="tablaAdminMonedas">
+                      <!-- Dinámico -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- 3. Gestión de Relaciones de Cambio -->
+              <div class="border-t border-slate-800/60 pt-4">
+                <h3 class="font-bold text-slate-350 text-sm border-b border-slate-800/60 pb-2 mb-3">Relaciones de Cambio
+                </h3>
+                <form id="formAdminRelacion" class="flex gap-2 mb-3">
+                  <select id="adminRelOrigen" class="w-full glass-input rounded px-2 py-1 text-xs">
+                    <!-- Dinámico -->
+                  </select>
+                  <span class="text-slate-500 self-center">/</span>
+                  <select id="adminRelDestino" class="w-full glass-input rounded px-2 py-1 text-xs">
+                    <!-- Dinámico -->
+                  </select>
+                  <button type="submit"
+                    class="bg-indigo-650 hover:bg-indigo-600 text-white text-xs font-semibold px-3 py-1 rounded">Vincular</button>
+                </form>
+                <div class="overflow-y-auto max-h-32 border border-slate-900 rounded-lg">
+                  <ul id="listaAdminRelaciones" class="text-xs divide-y divide-slate-850/50">
+                    <!-- Dinámico -->
+                  </ul>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Script del Controlador Frontend -->
+  <script src="app.js"></script>
+</body>
+
+</html>
