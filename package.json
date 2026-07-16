@@ -61,8 +61,8 @@
     "publish": [
       {
         "provider": "github",
-        "owner": "username",
-        "repo": "repo-name"
+        "owner": "DRKM2050",
+        "repo": "fenix-suite"
       }
     ]
   }
