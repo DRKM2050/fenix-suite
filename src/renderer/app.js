@@ -134,12 +134,12 @@ async function arrancarAplicacion() {
   await cargarOpcionesSistemaYUsuario();
   actualizarDashboard();
 
-  // Alerta de actualización exitosa para v1.0.1
+  // Alerta de actualización exitosa para v1.0.2
   const alertVersion = localStorage.getItem('version_alert_dismissed');
-  if (alertVersion !== '1.0.1') {
+  if (alertVersion !== '1.0.2') {
     setTimeout(() => {
-      alert('¡Actualización Exitosa!\n\nFENIX Suite ha sido actualizada correctamente a la versión 1.0.1.\n\nMejoras y corrección de bugs aplicadas con éxito.');
-      localStorage.setItem('version_alert_dismissed', '1.0.1');
+      alert('¡Actualización Exitosa!\n\nFENIX Suite ha sido actualizada correctamente a la versión 1.0.2.\n\nMejoras y corrección de bugs aplicadas con éxito.');
+      localStorage.setItem('version_alert_dismissed', '1.0.2');
     }, 1000);
   }
 
