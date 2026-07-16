@@ -127,8 +127,9 @@ contextBridge.exposeInMainWorld('api', {
     descargarAhora: () => ipcRenderer.invoke('drive:descargar-ahora')
   },
 
-  // Relaunch de aplicación
+  // Relaunch y Foco de aplicación
   app: {
-    relaunch: () => ipcRenderer.invoke('app:relaunch')
+    relaunch: () => ipcRenderer.invoke('app:relaunch'),
+    forceFocus: () => ipcRenderer.send('app:force-focus')
   }
 });

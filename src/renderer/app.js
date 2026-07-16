@@ -3,6 +3,9 @@ const _originalAlert = window.alert;
 window.alert = function(message) {
   _originalAlert(message);
   setTimeout(() => {
+    try {
+      window.api.app.forceFocus();
+    } catch(e) {}
     window.focus();
     if (document.activeElement && document.activeElement !== document.body) {
       document.activeElement.blur();
@@ -15,6 +18,9 @@ const _originalConfirm = window.confirm;
 window.confirm = function(message) {
   const res = _originalConfirm(message);
   setTimeout(() => {
+    try {
+      window.api.app.forceFocus();
+    } catch(e) {}
     window.focus();
     if (document.activeElement && document.activeElement !== document.body) {
       document.activeElement.blur();
@@ -23,6 +29,18 @@ window.confirm = function(message) {
   }, 50);
   return res;
 };
+
+// Escuchador global preventivo para obligar el foco en cualquier input/textarea/select al hacer click en Windows
+document.addEventListener('click', (e) => {
+  const tag = e.target && e.target.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') {
+    try {
+      e.target.focus();
+    } catch(err) {
+      console.error("Error al forzar foco en elemento clickeado:", err);
+    }
+  }
+}, true);
 
 // ==========================================
 // CONTROLADOR GENERAL FRONTEND (FNX ADMIN)

@@ -734,6 +734,14 @@ ipcMain.handle('app:relaunch', () => {
   app.exit(0);
 });
 
+// --- Forzar Foco del Sistema ---
+ipcMain.on('app:force-focus', () => {
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
+  }
+});
+
 autoUpdater.on('update-available', () => {
   if (mainWindow) mainWindow.webContents.send('updater:disponible');
 });
