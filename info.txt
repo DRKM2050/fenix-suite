@@ -1,0 +1,8 @@
+# Para pruebas locales en Mac:
+npm run dev-mac
+
+# Para generar el instalador de Windows
+npm run build-all
+
+# Para subir tus actualizaciones a GitHub
+npm run git-release
