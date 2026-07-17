@@ -4,6 +4,9 @@ const https = require('https');
 const { GoogleGenAI } = require('@google/genai');
 const db = require('./db');
 
+// Clave API por defecto (hardcodeada de respaldo)
+const DEFAULT_API_KEY = 'TU_API_KEY_POR_DEFECTO_AQUI';
+
 // Helper para obtener el cliente de Gemini cargado de forma dinámica
 async function getAIClient() {
   const aiEnabledRow = await db.dbGet("SELECT valor_ajuste FROM opciones WHERE clave_ajuste = 'ai_enabled'");
@@ -13,8 +16,15 @@ async function getAIClient() {
   }
 
   const apiKeyRow = await db.dbGet("SELECT valor_ajuste FROM opciones WHERE clave_ajuste = 'ai_api_key'");
-  const apiKey = apiKeyRow ? apiKeyRow.valor_ajuste : '';
-  if (!apiKey) {
+  let apiKey = apiKeyRow ? apiKeyRow.valor_ajuste : '';
+
+  // Si no hay clave del usuario, recurrir a la clave por defecto de respaldo
+  if (!apiKey || apiKey.trim() === '') {
+    apiKey = DEFAULT_API_KEY;
+  }
+
+  // Validar si la clave sigue siendo el placeholder o si está vacía
+  if (!apiKey || apiKey === 'TU_API_KEY_POR_DEFECTO_AQUI' || apiKey.trim() === '') {
     throw new Error('API Key de Google AI Studio no configurada. Por favor, regístrela en los ajustes.');
   }
 
