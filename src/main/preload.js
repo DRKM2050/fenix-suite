@@ -73,7 +73,8 @@ contextBridge.exposeInMainWorld('api', {
     listar: () => ipcRenderer.invoke('db:productos-listar'),
     crear: (p) => ipcRenderer.invoke('db:productos-crear', p),
     actualizar: (p) => ipcRenderer.invoke('db:productos-actualizar', p),
-    eliminar: (id) => ipcRenderer.invoke('db:productos-eliminar', id)
+    eliminar: (id) => ipcRenderer.invoke('db:productos-eliminar', id),
+    seleccionarImagen: () => ipcRenderer.invoke('db:productos-seleccionar-imagen')
   },
 
   // Base de Datos - Mis Cuentas (Propias)
@@ -113,7 +114,7 @@ contextBridge.exposeInMainWorld('api', {
   reportes: {
     descargarPDF: (filtros) => ipcRenderer.invoke('rep:descargar-pdf', filtros),
     descargarExcel: (filtros) => ipcRenderer.invoke('rep:descargar-excel', filtros),
-    descargarCatalogoPDF: (productos) => ipcRenderer.invoke('rep:descargar-catalogo-pdf', productos)
+    descargarCatalogoPDF: (productos, tipo) => ipcRenderer.invoke('rep:descargar-catalogo-pdf', productos, tipo)
   },
 
   // Actualizaciones de Software (electron-updater)
@@ -124,7 +125,8 @@ contextBridge.exposeInMainWorld('api', {
     onUpdateAvailable: (callback) => ipcRenderer.on('updater:disponible', () => callback()),
     onUpdateNotAvailable: (callback) => ipcRenderer.on('updater:no-disponible', () => callback()),
     onUpdateDownloaded: (callback) => ipcRenderer.on('updater:descargado', () => callback()),
-    onUpdateError: (callback) => ipcRenderer.on('updater:error', (event, msg) => callback(msg))
+    onUpdateError: (callback) => ipcRenderer.on('updater:error', (event, msg) => callback(msg)),
+    getVersion: () => ipcRenderer.invoke('app:get-version')
   },
 
   // Sincronización en la Nube con Google Drive

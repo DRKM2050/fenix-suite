@@ -1540,6 +1540,30 @@
                       class="w-full glass-input rounded-lg px-3 py-2 text-xs" required>
                   </div>
                 </div>
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label class="block text-xs text-slate-400 font-semibold mb-1">Precio Venta (USDT) *</label>
+                    <input type="number" step="any" id="ecoProductoPrecioVenta" placeholder="0.00"
+                      class="w-full glass-input rounded-lg px-3 py-2 text-xs" required>
+                  </div>
+                  <div class="flex items-center gap-2 pt-5">
+                    <input type="checkbox" id="ecoProductoEsOferta" class="h-4 w-4 accent-rose-650 bg-slate-900 border-slate-800 rounded">
+                    <label for="ecoProductoEsOferta" class="text-xs text-slate-350 font-semibold cursor-pointer select-none">¿Es Oferta?</label>
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-xs text-slate-400 font-semibold mb-1">Imagen del Producto</label>
+                  <div class="flex gap-2">
+                    <input type="text" id="ecoProductoImagen" placeholder="Ninguna imagen seleccionada" readonly
+                      class="flex-1 glass-input rounded-lg px-3 py-2 text-xs bg-slate-900">
+                    <button type="button" id="btnCargarImagenEco" class="bg-indigo-650/40 hover:bg-indigo-600/50 text-indigo-400 text-xs font-semibold px-3 py-2 rounded-lg transition border border-indigo-500/20">
+                      Examinar...
+                    </button>
+                  </div>
+                  <div id="ecoProductoImagenPreviewContainer" class="mt-2 hidden">
+                    <img id="ecoProductoImagenPreview" src="" class="h-16 w-auto rounded border border-slate-800 object-contain bg-slate-900/60 p-1">
+                  </div>
+                </div>
                 <div>
                   <label class="block text-xs text-slate-400 font-semibold mb-1">Observaciones</label>
                   <textarea id="ecoProductoObservaciones" placeholder="Detalles o especificaciones"
@@ -1576,11 +1600,14 @@
                 <table class="w-full text-left border-collapse text-xs">
                   <thead>
                     <tr class="bg-slate-900/60 text-slate-400 border-b border-slate-800">
+                      <th class="p-3 text-center" style="width: 40px;">
+                        <input type="checkbox" id="chkSelectAllEco" class="h-3.5 w-3.5 accent-indigo-650 bg-slate-900 border-slate-800 rounded">
+                      </th>
                       <th class="p-3">SKU</th>
                       <th class="p-3">Nombre del Producto</th>
                       <th class="p-3 text-right">Existencias</th>
-                      <th class="p-3 text-right">Costo Unit. Original</th>
-                      <th class="p-3 text-right">Costo Unit. Equiv.</th>
+                      <th class="p-3 text-right">Costo Equiv.</th>
+                      <th class="p-3 text-right">Venta (USDT)</th>
                       <th class="p-3 text-center">Acciones</th>
                     </tr>
                   </thead>
@@ -2444,6 +2471,69 @@
       <button onclick="calcInput('0')" class="col-span-2 bg-slate-900/40 hover:bg-slate-850 text-slate-200 font-medium p-2.5 rounded-lg text-sm transition">0</button>
       <button onclick="calcInput('.')" class="bg-slate-900/40 hover:bg-slate-850 text-slate-200 font-medium p-2.5 rounded-lg text-sm transition">.</button>
       <button onclick="calcEvaluate()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold p-2.5 rounded-lg text-sm transition">=</button>
+    </div>
+  </div>
+
+  <!-- Modal de Preparación de Catálogo (Pipeline) -->
+  <div id="ecoCatalogPipelineModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md hidden">
+    <div class="glass-panel w-full max-w-4xl p-6 rounded-3xl shadow-2xl flex flex-col max-h-[85vh] border border-slate-800">
+      <!-- Cabecera -->
+      <div class="flex items-center justify-between border-b border-slate-800/80 pb-3 mb-4">
+        <div>
+          <h3 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+            <svg class="h-5 w-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+            Configurar Precios y Ofertas del Catálogo
+          </h3>
+          <p class="text-slate-400 text-xs mt-0.5">Revise y confirme el precio de venta y ofertas para los productos seleccionados.</p>
+        </div>
+        <button id="btnCloseEcoCatalogModal" class="text-slate-500 hover:text-slate-400 text-xl font-bold transition">&times;</button>
+      </div>
+
+      <!-- Tabla de Configuración de Productos -->
+      <div class="overflow-y-auto flex-1 border border-slate-850 rounded-xl mb-4 max-h-[50vh]">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr class="bg-slate-900/80 text-slate-400 border-b border-slate-800 sticky top-0 z-10">
+              <th class="p-3">Nombre / SKU</th>
+              <th class="p-3 text-right" style="width: 100px;">Costo (USDT)</th>
+              <th class="p-3 text-right" style="width: 130px;">Precio Venta *</th>
+              <th class="p-3 text-center" style="width: 100px;">¿Es Oferta?</th>
+              <th class="p-3" style="width: 250px;">Imagen del Producto</th>
+            </tr>
+          </thead>
+          <tbody id="tablaPipelineProductos" class="divide-y divide-slate-800/40 text-slate-300">
+            <!-- Dinámico -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Configuración Final y Descarga -->
+      <div class="border-t border-slate-800/60 pt-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <!-- Selector de Estilo -->
+        <div class="flex items-center gap-3">
+          <label for="selLayoutCatalogo" class="text-xs text-slate-400 font-semibold whitespace-nowrap">Estilo del Catálogo:</label>
+          <select id="selLayoutCatalogo" class="glass-input rounded-lg px-3 py-1.5 text-xs bg-slate-900 font-semibold w-56">
+            <option value="comercial">Comercial (3 columnas con fotos)</option>
+            <option value="intermedio">Intermedio (6 columnas con fotos mini)</option>
+            <option value="simple">Simple (Lista tabular sin fotos)</option>
+          </select>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="flex gap-2.5">
+          <button type="button" id="btnCancelEcoCatalog" class="bg-slate-800 hover:bg-slate-700 text-slate-350 font-semibold px-4 py-2 rounded-xl text-xs transition">
+            Cancelar
+          </button>
+          <button type="button" id="btnConfirmEcoCatalog" class="bg-rose-700 hover:bg-rose-600 text-white font-semibold px-5 py-2 rounded-xl text-xs transition shadow-lg shadow-rose-700/20 flex items-center gap-1.5">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            Generar y Descargar Catálogo
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 

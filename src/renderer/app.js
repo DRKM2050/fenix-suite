@@ -110,13 +110,18 @@ async function arrancarAplicacion() {
   await cargarOpcionesSistemaYUsuario();
   actualizarDashboard();
 
-  // Alerta de actualización exitosa para v1.0.4
-  const alertVersion = localStorage.getItem('version_alert_dismissed');
-  if (alertVersion !== '1.0.4') {
-    setTimeout(() => {
-      alert('¡Actualización Exitosa!\n\nFENIX Suite ha sido actualizada correctamente a la versión 1.0.4.\n\nMejoras y corrección de bugs aplicadas con éxito.');
-      localStorage.setItem('version_alert_dismissed', '1.0.4');
-    }, 1000);
+  // Alerta de actualización exitosa dinámica
+  try {
+    const currentVersion = await window.api.updater.getVersion();
+    const alertVersion = localStorage.getItem('version_alert_dismissed');
+    if (alertVersion !== currentVersion) {
+      setTimeout(() => {
+        alert(`¡Actualización Exitosa!\n\nFENIX Suite ha sido actualizada correctamente a la versión ${currentVersion}.\n\nMejoras y corrección de bugs aplicadas con éxito.`);
+        localStorage.setItem('version_alert_dismissed', currentVersion);
+      }, 1000);
+    }
+  } catch (err) {
+    console.error('Error al obtener versión de la app:', err);
   }
 
   // Buscar actualizaciones automáticamente si está habilitado
@@ -1156,7 +1161,7 @@ async function refrescarEcoProductos() {
     if (tbody) {
       tbody.innerHTML = '';
       if (stateProductosEco.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-500">No hay productos en inventario.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-500">No hay productos en inventario.</td></tr>`;
       } else {
         stateProductosEco.forEach(p => {
           let equiv = p.monto_costo;
@@ -1165,11 +1170,17 @@ async function refrescarEcoProductos() {
           }
           const tr = `
             <tr class="border-b border-slate-900 hover:bg-slate-900/30">
+              <td class="p-3 text-center">
+                <input type="checkbox" class="chk-select-eco h-3.5 w-3.5 accent-indigo-650 bg-slate-900 border-slate-800 rounded" data-id="${p.id_producto}">
+              </td>
               <td class="p-3 font-mono font-semibold text-slate-400">${p.sku || '--'}</td>
-              <td class="p-3 font-bold text-slate-200">${p.nombre}</td>
+              <td class="p-3 font-bold text-slate-200">
+                ${p.nombre}
+                ${p.es_oferta === 1 ? '<span class="ml-1.5 bg-rose-600/20 text-rose-400 text-[9px] font-bold px-1.5 py-0.5 rounded border border-rose-500/20">OFERTA</span>' : ''}
+              </td>
               <td class="p-3 text-right font-semibold text-teal-400">${p.stock} uds</td>
-              <td class="p-3 text-right">${formatearNumeroVisual(p.monto_costo)} ${p.moneda_costo}</td>
-              <td class="p-3 text-right font-bold text-slate-100">${formatearNumeroVisual(equiv)} ${state.opciones.moneda_principal}</td>
+              <td class="p-3 text-right font-bold text-slate-350">${formatearNumeroVisual(equiv)} ${state.opciones.moneda_principal}</td>
+              <td class="p-3 text-right font-bold text-indigo-400">${formatearNumeroVisual(p.precio_venta || 0.0)} USDT</td>
               <td class="p-3 text-center flex justify-center gap-2">
                 <button onclick="cargarEditarEcoProducto(${p.id_producto})" class="text-indigo-400 hover:text-indigo-300 font-semibold text-[11px] hover:underline">Editar</button>
                 <button onclick="eliminarEcoProducto(${p.id_producto})" class="text-rose-500 hover:text-rose-455 font-semibold text-[11px] hover:underline">Borrar</button>
@@ -1178,6 +1189,16 @@ async function refrescarEcoProductos() {
           `;
           tbody.insertAdjacentHTML('beforeend', tr);
         });
+
+        // Configurar listener para Select All
+        const chkSelectAll = document.getElementById('chkSelectAllEco');
+        if (chkSelectAll) {
+          chkSelectAll.checked = false;
+          chkSelectAll.addEventListener('change', () => {
+            const checkboxes = document.querySelectorAll('.chk-select-eco');
+            checkboxes.forEach(cb => cb.checked = chkSelectAll.checked);
+          });
+        }
       }
     }
 
@@ -1210,8 +1231,23 @@ async function cargarEditarEcoProducto(id) {
   document.getElementById('ecoProductoMonedaCosto').value = p.moneda_costo;
   document.getElementById('ecoProductoCambioCosto').value = p.cambio_costo;
   document.getElementById('ecoProductoStock').value = p.stock;
-  document.getElementById('ecoProductoObservaciones').value = p.observaciones || '';
+  document.getElementById('ecoProductoPrecioVenta').value = p.precio_venta || '';
+  document.getElementById('ecoProductoEsOferta').checked = p.es_oferta === 1;
+  document.getElementById('ecoProductoImagen').value = p.imagen || '';
 
+  const previewImg = document.getElementById('ecoProductoImagenPreview');
+  const previewContainer = document.getElementById('ecoProductoImagenPreviewContainer');
+  if (previewImg && previewContainer) {
+    if (p.imagen) {
+      previewImg.src = `../../assets/img/products/${p.imagen}`;
+      previewContainer.classList.remove('hidden');
+    } else {
+      previewImg.src = '';
+      previewContainer.classList.add('hidden');
+    }
+  }
+
+  document.getElementById('ecoProductoObservaciones').value = p.observaciones || '';
   document.getElementById('formEcoProductoTitulo').textContent = 'Editar Producto';
   document.getElementById('btnCancelarEcoProducto').classList.remove('hidden');
   document.getElementById('ecoProductoNombre').focus();
@@ -2636,6 +2672,39 @@ function configurarFormularios() {
   // --- Formulario Productos E-Commerce (CRUD) ---
   const formEcoProd = document.getElementById('formEcoProducto');
   if (formEcoProd) {
+    const previewContainer = document.getElementById('ecoProductoImagenPreviewContainer');
+    const previewImg = document.getElementById('ecoProductoImagenPreview');
+
+    const resetFormEco = () => {
+      formEcoProd.reset();
+      document.getElementById('ecoProductoId').value = '';
+      document.getElementById('ecoProductoImagen').value = '';
+      if (previewImg && previewContainer) {
+        previewImg.src = '';
+        previewContainer.classList.add('hidden');
+      }
+      document.getElementById('formEcoProductoTitulo').textContent = 'Registrar Producto';
+      document.getElementById('btnCancelarEcoProducto').classList.add('hidden');
+    };
+
+    const btnCargar = document.getElementById('btnCargarImagenEco');
+    if (btnCargar) {
+      btnCargar.addEventListener('click', async () => {
+        try {
+          const res = await window.api.ecommerceProductos.seleccionarImagen();
+          if (res.success) {
+            document.getElementById('ecoProductoImagen').value = res.fileName;
+            if (previewImg && previewContainer) {
+              previewImg.src = `../../assets/img/products/${res.fileName}`;
+              previewContainer.classList.remove('hidden');
+            }
+          }
+        } catch (err) {
+          alert('Error al seleccionar imagen: ' + err.message);
+        }
+      });
+    }
+
     formEcoProd.addEventListener('submit', async (e) => {
       e.preventDefault();
       const id = document.getElementById('ecoProductoId').value;
@@ -2646,6 +2715,9 @@ function configurarFormularios() {
         moneda_costo: document.getElementById('ecoProductoMonedaCosto').value,
         cambio_costo: parseFloat(document.getElementById('ecoProductoCambioCosto').value) || 1.0,
         stock: parseInt(document.getElementById('ecoProductoStock').value) || 0,
+        precio_venta: parseFloat(document.getElementById('ecoProductoPrecioVenta').value) || 0.0,
+        es_oferta: document.getElementById('ecoProductoEsOferta').checked ? 1 : 0,
+        imagen: document.getElementById('ecoProductoImagen').value || null,
         observaciones: document.getElementById('ecoProductoObservaciones').value.trim() || null
       };
 
@@ -2658,10 +2730,7 @@ function configurarFormularios() {
           await window.api.ecommerceProductos.crear(pData);
           alert('Producto agregado al catálogo.');
         }
-        formEcoProd.reset();
-        document.getElementById('ecoProductoId').value = '';
-        document.getElementById('formEcoProductoTitulo').textContent = 'Registrar Producto';
-        document.getElementById('btnCancelarEcoProducto').classList.add('hidden');
+        resetFormEco();
         await refrescarEcoProductos();
         await refrescarEcommerceStock();
       } catch (err) {
@@ -2670,22 +2739,137 @@ function configurarFormularios() {
     });
 
     document.getElementById('btnCancelarEcoProducto').addEventListener('click', () => {
-      formEcoProd.reset();
-      document.getElementById('ecoProductoId').value = '';
-      document.getElementById('formEcoProductoTitulo').textContent = 'Registrar Producto';
-      document.getElementById('btnCancelarEcoProducto').classList.add('hidden');
+      resetFormEco();
     });
   }
 
   // --- Botón Descargar Catálogo PDF ---
   const btnDescargarCat = document.getElementById('btnDescargarCatalogoPDF');
+  const ecoModal = document.getElementById('ecoCatalogPipelineModal');
+  const btnCloseEcoModal = document.getElementById('btnCloseEcoCatalogModal');
+  const btnCancelEcoModal = document.getElementById('btnCancelEcoCatalog');
+  const btnConfirmEcoModal = document.getElementById('btnConfirmEcoCatalog');
+  const tablaPipeline = document.getElementById('tablaPipelineProductos');
+
+  let pipelineProductos = [];
+
   if (btnDescargarCat) {
     btnDescargarCat.addEventListener('click', async () => {
+      const chkSelected = document.querySelectorAll('.chk-select-eco:checked');
+      let selectedIds = Array.from(chkSelected).map(cb => parseInt(cb.getAttribute('data-id')));
+      
+      if (selectedIds.length === 0) {
+        selectedIds = stateProductosEco.map(p => p.id_producto);
+      }
+
+      pipelineProductos = stateProductosEco.filter(p => selectedIds.includes(p.id_producto)).map(p => ({...p}));
+
+      if (pipelineProductos.length === 0) {
+        alert('No hay productos disponibles para generar el catálogo.');
+        return;
+      }
+
+      if (tablaPipeline) {
+        tablaPipeline.innerHTML = '';
+        pipelineProductos.forEach(p => {
+          let equivCosto = p.monto_costo;
+          if (p.moneda_costo !== state.opciones.moneda_principal) {
+            equivCosto = p.monto_costo * p.cambio_costo;
+          }
+          
+          const tr = `
+            <tr id="pipelineRow_${p.id_producto}">
+              <td class="p-3">
+                <div class="font-bold text-slate-200">${p.nombre}</div>
+                <div class="text-[10px] text-slate-500 font-mono">${p.sku || 'SIN SKU'}</div>
+              </td>
+              <td class="p-3 text-right font-mono text-slate-400">
+                ${formatearNumeroVisual(equivCosto)} ${state.opciones.moneda_principal}
+              </td>
+              <td class="p-3 text-right">
+                <input type="number" step="any" value="${p.precio_venta || ''}" placeholder="0.00" 
+                  id="pipeVenta_${p.id_producto}" 
+                  class="glass-input rounded-lg px-2 py-1 text-xs text-right font-semibold w-24 text-indigo-400">
+              </td>
+              <td class="p-3 text-center">
+                <input type="checkbox" ${p.es_oferta === 1 ? 'checked' : ''} 
+                  id="pipeOferta_${p.id_producto}"
+                  class="h-4 w-4 accent-rose-650 bg-slate-900 border-slate-800 rounded cursor-pointer">
+              </td>
+              <td class="p-3">
+                <div class="flex items-center gap-2">
+                  <div class="h-8 w-8 bg-slate-900/60 rounded border border-slate-800 flex items-center justify-center overflow-hidden">
+                    <img id="pipePreview_${p.id_producto}" src="${p.imagen ? `../../assets/img/products/${p.imagen}` : ''}" 
+                      class="h-full w-full object-contain ${p.imagen ? '' : 'hidden'}">
+                  </div>
+                  <input type="hidden" id="pipeImgVal_${p.id_producto}" value="${p.imagen || ''}">
+                  <button type="button" onclick="pipelineExaminarImagen(${p.id_producto})" 
+                    class="bg-slate-800 hover:bg-slate-700 text-slate-350 text-[10px] px-2 py-1 rounded border border-slate-750 transition">
+                    Examinar...
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+          tablaPipeline.insertAdjacentHTML('beforeend', tr);
+        });
+      }
+
+      if (ecoModal) {
+        ecoModal.classList.remove('hidden');
+      }
+    });
+  }
+
+  window.pipelineExaminarImagen = async (id) => {
+    try {
+      const res = await window.api.ecommerceProductos.seleccionarImagen();
+      if (res.success) {
+        const inputHidden = document.getElementById(`pipeImgVal_${id}`);
+        const imgEl = document.getElementById(`pipePreview_${id}`);
+        if (inputHidden) inputHidden.value = res.fileName;
+        if (imgEl) {
+          imgEl.src = `../../assets/img/products/${res.fileName}`;
+          imgEl.classList.remove('hidden');
+        }
+      }
+    } catch (err) {
+      alert('Error al seleccionar imagen: ' + err.message);
+    }
+  };
+
+  const closeEcoCatalogModal = () => {
+    if (ecoModal) ecoModal.classList.add('hidden');
+  };
+
+  if (btnCloseEcoModal) btnCloseEcoModal.addEventListener('click', closeEcoCatalogModal);
+  if (btnCancelEcoModal) btnCancelEcoModal.addEventListener('click', closeEcoCatalogModal);
+
+  if (btnConfirmEcoModal) {
+    btnConfirmEcoModal.addEventListener('click', async () => {
+      const updatedProducts = [];
       try {
-        const path = await window.api.reportes.descargarCatalogoPDF(stateProductosEco);
-        alert(`Catálogo PDF guardado con éxito en su carpeta de descargas:\n${path}`);
+        for (const p of pipelineProductos) {
+          const precio_venta = parseFloat(document.getElementById(`pipeVenta_${p.id_producto}`).value) || 0.0;
+          const es_oferta = document.getElementById(`pipeOferta_${p.id_producto}`).checked ? 1 : 0;
+          const imagen = document.getElementById(`pipeImgVal_${p.id_producto}`).value || null;
+
+          p.precio_venta = precio_venta;
+          p.es_oferta = es_oferta;
+          p.imagen = imagen;
+
+          await window.api.ecommerceProductos.actualizar(p);
+          updatedProducts.push(p);
+        }
+
+        await refrescarEcoProductos();
+
+        const selLayout = document.getElementById('selLayoutCatalogo').value;
+        const downloadPath = await window.api.reportes.descargarCatalogoPDF(updatedProducts, selLayout);
+        alert(`¡Catálogo PDF generado con éxito!\nGuardado en:\n${downloadPath}`);
+        closeEcoCatalogModal();
       } catch (err) {
-        alert('Error al generar catálogo PDF: ' + err.message);
+        alert('Error al guardar y descargar el catálogo: ' + err.message);
       }
     });
   }

@@ -240,6 +240,9 @@ function ejecutarCreacionTablas() {
     db.run("ALTER TABLE ecommerce ADD COLUMN cantidad INTEGER DEFAULT 1;", (err) => {});
     db.run("ALTER TABLE movimientos ADD COLUMN status_operacion TEXT DEFAULT 'LIQUIDADO';", (err) => {});
     db.run("ALTER TABLE movimientos ADD COLUMN subcategoria_ocasional TEXT;", (err) => {});
+    db.run("ALTER TABLE ecommerce_productos ADD COLUMN precio_venta REAL DEFAULT 0.0;", (err) => {});
+    db.run("ALTER TABLE ecommerce_productos ADD COLUMN imagen TEXT;", (err) => {});
+    db.run("ALTER TABLE ecommerce_productos ADD COLUMN es_oferta INTEGER DEFAULT 0;", (err) => {});
 
     // Asegurar existencia del CLIENTE OCASIONAL (Tipo: OCASIONAL)
     db.get("SELECT COUNT(*) as count FROM clientes WHERE nombre = 'CLIENTE OCASIONAL'", (err, row) => {

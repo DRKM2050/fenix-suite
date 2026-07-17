@@ -88,8 +88,9 @@ function objectToUpperCase(obj) {
     if (Object.prototype.hasOwnProperty.call(obj, key)) {
       const val = obj[key];
       if (typeof val === 'string') {
-        if (key.toLowerCase().includes('mail') || key.toLowerCase().includes('email')) {
-          newObj[key] = val.trim().toLowerCase();
+        const lowerKey = key.toLowerCase();
+        if (lowerKey.includes('mail') || lowerKey.includes('email') || lowerKey === 'imagen') {
+          newObj[key] = val.trim();
         } else {
           newObj[key] = val.trim().toUpperCase();
         }
@@ -501,8 +502,8 @@ ipcMain.handle('db:productos-listar', async () => {
 ipcMain.handle('db:productos-crear', async (event, rawP) => {
   const p = objectToUpperCase(rawP);
   return await db.dbRun(`
-    INSERT INTO ecommerce_productos (nombre, sku, stock, moneda_costo, monto_costo, cambio_costo, observaciones, timestamp)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO ecommerce_productos (nombre, sku, stock, moneda_costo, monto_costo, cambio_costo, observaciones, timestamp, precio_venta, imagen, es_oferta)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `, [
     p.nombre,
     p.sku || null,
@@ -511,7 +512,10 @@ ipcMain.handle('db:productos-crear', async (event, rawP) => {
     p.monto_costo || 0.0,
     p.cambio_costo || 1.0,
     p.observaciones || null,
-    new Date().toISOString()
+    new Date().toISOString(),
+    p.precio_venta || 0.0,
+    p.imagen || null,
+    p.es_oferta || 0
   ]);
 });
 
@@ -519,7 +523,7 @@ ipcMain.handle('db:productos-actualizar', async (event, rawP) => {
   const p = objectToUpperCase(rawP);
   return await db.dbRun(`
     UPDATE ecommerce_productos 
-    SET nombre = ?, sku = ?, stock = ?, moneda_costo = ?, monto_costo = ?, cambio_costo = ?, observaciones = ?
+    SET nombre = ?, sku = ?, stock = ?, moneda_costo = ?, monto_costo = ?, cambio_costo = ?, observaciones = ?, precio_venta = ?, imagen = ?, es_oferta = ?
     WHERE id_producto = ?
   `, [
     p.nombre,
@@ -529,12 +533,46 @@ ipcMain.handle('db:productos-actualizar', async (event, rawP) => {
     p.monto_costo,
     p.cambio_costo,
     p.observaciones,
+    p.precio_venta || 0.0,
+    p.imagen || null,
+    p.es_oferta || 0,
     p.id_producto
   ]);
 });
 
 ipcMain.handle('db:productos-eliminar', async (event, id) => {
   return await db.dbRun("DELETE FROM ecommerce_productos WHERE id_producto = ?", [id]);
+});
+
+ipcMain.handle('db:productos-seleccionar-imagen', async () => {
+  const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
+    title: 'Seleccionar Imagen del Producto',
+    filters: [
+      { name: 'Imágenes', extensions: ['png', 'jpg', 'jpeg', 'webp'] }
+    ],
+    properties: ['openFile']
+  });
+
+  if (!canceled && filePaths.length > 0) {
+    try {
+      const selectedPath = filePaths[0];
+      const imagesDir = path.join(__dirname, '../../assets/img/products');
+      if (!fs.existsSync(imagesDir)) {
+        fs.mkdirSync(imagesDir, { recursive: true });
+      }
+      
+      const ext = path.extname(selectedPath);
+      const fileName = `prod_${Date.now()}${ext}`;
+      const destPath = path.join(imagesDir, fileName);
+      
+      fs.copyFileSync(selectedPath, destPath);
+      return { success: true, fileName };
+    } catch (err) {
+      console.error('Error al copiar imagen:', err);
+      throw new Error('No se pudo copiar la imagen del producto: ' + err.message);
+    }
+  }
+  return { success: false, cancelled: true };
 });
 
 // --- Catálogos Administrativos (Tipos de Transacción, Monedas y Relaciones) ---
@@ -774,6 +812,10 @@ ipcMain.on('updater:instalar', () => {
 ipcMain.handle('app:relaunch', () => {
   app.relaunch();
   app.exit(0);
+});
+
+ipcMain.handle('app:get-version', () => {
+  return app.getVersion();
 });
 
 // --- Forzar Foco del Sistema ---
