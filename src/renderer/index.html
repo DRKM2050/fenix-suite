@@ -322,7 +322,8 @@
           class="w-full text-left bg-slate-900/60 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 p-3 rounded-xl flex items-center gap-3 transition">
           <div class="p-2 bg-indigo-650/10 text-indigo-400 rounded-lg">
             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
           </div>
           <div>
@@ -335,7 +336,8 @@
           class="w-full text-left bg-slate-900/60 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 p-3 rounded-xl flex items-center gap-3 transition">
           <div class="p-2 bg-emerald-600/10 text-emerald-455 rounded-lg">
             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
           <div>
@@ -368,12 +370,14 @@
           class="w-full text-left bg-slate-900/60 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 p-3 rounded-xl flex items-center gap-3 transition">
           <div class="p-2 bg-emerald-600/10 text-emerald-455 rounded-lg">
             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
           <div>
             <div class="text-xs font-bold text-slate-200">Registrar Transacción con esta Cuenta</div>
-            <div class="text-[9px] text-slate-500">Abre movimientos pre-seleccionando cliente y esta cuenta bancaria.</div>
+            <div class="text-[9px] text-slate-500">Abre movimientos pre-seleccionando cliente y esta cuenta bancaria.
+            </div>
           </div>
         </button>
       </div>
@@ -855,7 +859,7 @@
                   class="step-num text-xs font-bold bg-slate-800 text-slate-400 h-5 w-5 rounded-full flex items-center justify-center shrink-0">
                   2</div>
                 <div class="flex-1">
-                  <div class="text-xs font-bold text-slate-200">Mis Cuentas Propias</div>
+                  <div class="text-xs font-bold text-slate-200">Mis Cuentas</div>
                   <div class="text-[10px] text-slate-400 mt-0.5">Crea tus cajas contables en Ajustes.</div>
                   <a href="#" id="link-step-cuentas"
                     class="text-[10px] text-indigo-400 font-semibold hover:underline mt-1 block">Crear →</a>
@@ -961,7 +965,7 @@
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
             <!-- Mis Cuentas Balances -->
             <div class="glass-panel lg:col-span-2 p-6 rounded-2xl flex flex-col space-y-4">
-              <h3 class="font-bold text-slate-350 text-md">Saldos de Mis Cuentas Propias</h3>
+              <h3 class="font-bold text-slate-350 text-md">Saldos de Mis Cuentas</h3>
               <div class="overflow-y-auto max-h-48 border border-slate-800/60 rounded-xl">
                 <table class="w-full text-left border-collapse text-xs">
                   <thead>
@@ -1243,23 +1247,13 @@
           <div class="flex justify-between items-center">
             <div>
               <h2 class="text-2xl font-bold text-slate-200">Módulo Cambios y Cotizaciones</h2>
-              <p class="text-slate-400 text-sm">Gestiona cotizaciones oficiales diarias frente a la base de cálculo
-                (USDT)</p>
+              <p class="text-slate-400 text-sm">Gestiona cotizaciones oficiales diarias frente a la base de cálculo (USDT)</p>
             </div>
           </div>
 
-          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-            <!-- Columna Izquierda: Cotizaciones Activas + Formulario de Registro -->
+          <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
+            <!-- Columna 1: Establecer Cotización + Widget Chaco -->
             <div class="space-y-6">
-              
-              <!-- Cotizaciones Activas -->
-              <div class="glass-panel p-6 rounded-2xl space-y-4">
-                <h3 class="font-bold text-slate-300 text-xs uppercase tracking-wider border-b border-slate-800/60 pb-2">Monedas y Cotizaciones Activas</h3>
-                <div id="gridCotizacionesActivas" class="grid grid-cols-1 gap-2.5 text-slate-100">
-                  <!-- Dinámico -->
-                </div>
-              </div>
-
               <!-- Ingreso de Tasa -->
               <div class="glass-panel p-6 rounded-2xl space-y-4">
                 <h3 class="font-bold text-slate-350 text-md border-b border-slate-800/60 pb-2">Establecer Cotización</h3>
@@ -1281,33 +1275,48 @@
                     <input type="number" step="any" id="cambioVenta" placeholder="0.00"
                       class="w-full glass-input rounded-lg px-3 py-2.5 text-lg font-bold text-center text-indigo-400 bg-slate-950/60 border border-slate-800" required>
                   </div>
-                <div class="flex gap-2">
-                  <button type="submit" id="btnGuardarCambio"
-                    class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-xl shadow-lg transition">
-                    Guardar Cotización
-                  </button>
-                  <button type="button" id="btnCancelarCambio"
-                    class="bg-slate-800 hover:bg-slate-700 text-slate-400 font-semibold px-4 py-3 rounded-xl text-sm transition hidden">
-                    Cancelar
-                  </button>
+                  <div class="flex gap-2">
+                    <button type="submit" id="btnGuardarCambio"
+                      class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-xl shadow-lg transition">
+                      Guardar Cotización
+                    </button>
+                    <button type="button" id="btnCancelarCambio"
+                      class="bg-slate-800 hover:bg-slate-700 text-slate-400 font-semibold px-4 py-3 rounded-xl text-sm transition hidden">
+                      Cancelar
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              <!-- Referencia Cambios Chaco -->
+              <div class="glass-panel p-6 rounded-2xl space-y-4">
+                <h3 class="font-bold text-slate-350 text-xs uppercase tracking-wider border-b border-slate-800/60 pb-2">Cotizaciones Chaco (Referencia)</h3>
+                <div class="rounded-xl overflow-hidden border border-slate-800 bg-slate-950/60 p-1">
+                  <iframe width="100%" height="240" src="https://www.cambioschaco.com.py/widgets/cotizacion/?lang=es" frameborder="0" style="filter: invert(0.9) hue-rotate(180deg); mix-blend-mode: screen;"></iframe>
                 </div>
-              </form>
+              </div>
             </div>
 
-            <!-- Historial de Tasas -->
-            <div class="glass-panel lg:col-span-2 p-6 rounded-2xl flex flex-col space-y-4">
-              <h3 class="font-bold text-slate-350 text-md border-b border-slate-800/60 pb-2">Historial Diario de Tasas
-              </h3>
-              <div class="overflow-y-auto max-h-[400px] border border-slate-800/60 rounded-xl">
+            <!-- Columna 2: Monedas y Cotizaciones Activas -->
+            <div class="glass-panel p-6 rounded-2xl space-y-4">
+              <h3 class="font-bold text-slate-350 text-xs uppercase tracking-wider border-b border-slate-800/60 pb-2">Monedas y Cotizaciones Activas</h3>
+              <div id="gridCotizacionesActivas" class="grid grid-cols-1 gap-2.5 text-slate-100">
+                <!-- Dinámico -->
+              </div>
+            </div>
+
+            <!-- Columna 3: Historial Diario de Tasas -->
+            <div class="glass-panel p-6 rounded-2xl flex flex-col space-y-4">
+              <h3 class="font-bold text-slate-350 text-md border-b border-slate-800/60 pb-2">Historial Diario de Tasas</h3>
+              <div class="overflow-y-auto max-h-[500px] border border-slate-800/60 rounded-xl">
                 <table class="w-full text-left border-collapse">
                   <thead>
                     <tr class="bg-slate-900/60 text-slate-400 text-xs border-b border-slate-800">
-                      <th class="p-3">Fecha Contable</th>
-                      <th class="p-3">Par Divisa</th>
-                      <th class="p-3 text-right">Compra</th>
-                      <th class="p-3 text-right">Venta</th>
-                      <th class="p-3">Registro Sistema</th>
-                      <th class="p-3 text-center">Acciones</th>
+                      <th class="p-2.5">Fecha</th>
+                      <th class="p-2.5">Par Divisa</th>
+                      <th class="p-2.5 text-right">Compra</th>
+                      <th class="p-2.5 text-right">Venta</th>
+                      <th class="p-2.5 text-center">Acciones</th>
                     </tr>
                   </thead>
                   <tbody id="tablaCambios" class="text-xs divide-y divide-slate-800/40 text-slate-350">
@@ -1639,31 +1648,33 @@
                   </tbody>
                 </table>
               </div>
+            </div>
           </div>
 
           <!-- TABLA DE CLIENTES (Card independiente full-width) -->
           <div class="glass-panel p-6 rounded-2xl flex flex-col space-y-4 w-full">
-            <h3 class="font-bold text-slate-350 text-md border-b border-slate-800/60 pb-2">Listado General de Clientes</h3>
-            
-            <div class="overflow-x-auto border border-slate-800/60 rounded-xl">
-              <table class="w-full text-left border-collapse">
-                <thead>
-                  <tr class="bg-slate-900/60 text-slate-400 text-xs border-b border-slate-800">
-                    <th class="p-3">Nombre</th>
-                    <th class="p-3">Documento (RUC)</th>
-                    <th class="p-3">Tipo</th>
-                    <th class="p-3">Teléfono</th>
-                    <th class="p-3">Correo</th>
-                    <th class="p-3">Estado</th>
-                    <th class="p-3 text-center">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody id="tablaClientes" class="text-xs divide-y divide-slate-800/40 text-slate-350">
-                  <!-- Dinámico -->
-                </tbody>
-              </table>
+              <h3 class="font-bold text-slate-350 text-md border-b border-slate-800/60 pb-2">Listado General de Clientes
+              </h3>
+
+              <div class="overflow-x-auto border border-slate-800/60 rounded-xl">
+                <table class="w-full text-left border-collapse">
+                  <thead>
+                    <tr class="bg-slate-900/60 text-slate-400 text-xs border-b border-slate-800">
+                      <th class="p-3">Nombre</th>
+                      <th class="p-3">Documento (RUC)</th>
+                      <th class="p-3">Tipo</th>
+                      <th class="p-3">Teléfono</th>
+                      <th class="p-3">Correo</th>
+                      <th class="p-3">Estado</th>
+                      <th class="p-3 text-center">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tablaClientes" class="text-xs divide-y divide-slate-800/40 text-slate-350">
+                    <!-- Dinámico -->
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
         </section>
 
         <!-- 6. VIEW: REPORTES -->
@@ -1802,7 +1813,8 @@
                 </div>
 
                 <div>
-                  <label class="block text-xs text-slate-400 font-semibold mb-1">Cuenta de Origen (Gastos Personales) *</label>
+                  <label class="block text-xs text-slate-400 font-semibold mb-1">Cuenta de Origen (Gastos Personales)
+                    *</label>
                   <select id="gastoMiCuenta" class="w-full glass-input rounded-lg px-3 py-2 text-sm" required>
                     <!-- Dinámico: Cuentas propias de gastos -->
                   </select>
@@ -1816,7 +1828,8 @@
                 </div>
 
                 <div>
-                  <label id="lblGastoMonto" class="block text-xs text-slate-400 font-semibold mb-1">Monto del Gasto *</label>
+                  <label id="lblGastoMonto" class="block text-xs text-slate-400 font-semibold mb-1">Monto del Gasto
+                    *</label>
                   <input type="number" step="any" id="gastoMonto" placeholder="0.00"
                     class="w-full glass-input rounded-lg px-3 py-2 text-sm" required>
                 </div>
@@ -2055,7 +2068,8 @@
                       <li>Vaya a la <strong>Biblioteca de APIs</strong> y active la API llamada <strong>Google Drive
                           API</strong>.</li>
                       <li>Configure la <strong>Pantalla de consentimiento de OAuth</strong> (Tipo de usuario:
-                        <strong>Externo</strong>, ingrese datos de soporte y guarde).</li>
+                        <strong>Externo</strong>, ingrese datos de soporte y guarde).
+                      </li>
                       <li><strong>Paso Crítico</strong>: En la sección <strong>Usuarios de prueba (Test Users)</strong>
                         agregue el correo de Google con el que iniciará sesión.</li>
                       <li>Vaya a <strong>Credenciales</strong> &gt; <strong>Crear credenciales</strong> &gt; <strong>ID
@@ -2123,10 +2137,10 @@
               </div>
             </div>
 
-            <!-- MIS CUENTAS PROPIAS -->
+            <!-- MIS CUENTAS -->
             <div class="glass-panel p-6 rounded-2xl space-y-4">
               <div class="flex justify-between items-center border-b border-slate-800/60 pb-2">
-                <h3 class="font-bold text-slate-350 text-sm">Mis Cuentas Propias</h3>
+                <h3 class="font-bold text-slate-350 text-sm">Mis Cuentas</h3>
                 <button type="button" id="btnNuevaMiCuenta"
                   class="bg-indigo-650 hover:bg-indigo-600 text-white font-semibold px-2.5 py-1 rounded text-xs transition">Nueva</button>
               </div>

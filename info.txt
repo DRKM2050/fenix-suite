@@ -6,3 +6,5 @@ npm run build-all
 
 # Para subir tus actualizaciones a GitHub
 npm run git-release
+
+- Quizas sea momento de separar los componentes del módulo de ajustes para ordenar y presentar mejor los paneles. Existen dos grupos aqui, el de los ajustes del sistema propiamiente (ajustes del sistema, sincronizacion en la nube, y el de ajustes finacieros o administrativos

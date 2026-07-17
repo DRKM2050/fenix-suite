@@ -1,6 +1,6 @@
 // Sobrescribir alert y confirm para corregir el bug de pérdida de foco y corregir el título "fnx-admin"
 const _originalAlert = window.alert;
-window.alert = function(message) {
+window.alert = function (message) {
   if (window.api && window.api.dialog && window.api.dialog.alert) {
     window.api.dialog.alert(message);
   } else {
@@ -9,7 +9,7 @@ window.alert = function(message) {
 };
 
 const _originalConfirm = window.confirm;
-window.confirm = function(message) {
+window.confirm = function (message) {
   if (window.api && window.api.dialog && window.api.dialog.confirm) {
     return window.api.dialog.confirm(message);
   } else {
@@ -62,7 +62,7 @@ function inicializarReloj() {
     clockEl.textContent = ahora.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     dateEl.textContent = ahora.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   };
-  
+
   actualizarTime();
   setInterval(actualizarTime, 1000);
 }
@@ -140,7 +140,7 @@ function limpiarFormularioMovimiento() {
   if (seccionEco) seccionEco.classList.add('hidden');
   const btnCancelar = document.getElementById('btnCancelarMovimiento');
   if (btnCancelar) btnCancelar.classList.add('hidden');
-  
+
   // Limpiar el selector de cuenta también
   const selectCta = document.getElementById('movCuenta');
   if (selectCta) selectCta.innerHTML = '<option value="">Seleccione...</option>';
@@ -245,23 +245,23 @@ function formatearNumeroMoneda(numero, moneda) {
   if (numero === undefined || numero === null || isNaN(numero)) {
     return moneda === 'PYG' ? '0' : '0,00';
   }
-  
+
   let numDecimals = 2; // por defecto
   if (moneda === 'PYG') {
     numDecimals = 0;
   } else if (moneda === 'BTC' || moneda === 'ETH') {
     numDecimals = 6;
   }
-  
+
   let str = Number(numero).toFixed(numDecimals);
-  
+
   // Si es crypto, recortar ceros redundantes a la derecha para no tener un valor largo si no es necesario
   if (numDecimals > 2 && str.includes('.')) {
     while (str.endsWith('0') && str.split('.')[1].length > 2) {
       str = str.substring(0, str.length - 1);
     }
   }
-  
+
   let parts = str.split('.');
   parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.'); // Punto para miles
   return parts.join(','); // Coma para decimales
@@ -313,7 +313,7 @@ async function cargarFechaContable() {
 
 function configurarJornadaContable() {
   const modal = document.getElementById('iniciarJornadaModal');
-  
+
   // Abrir modal personalizado
   document.getElementById('btnIniciarOperaciones').addEventListener('click', () => {
     const hoy = new Date().toISOString().split('T')[0];
@@ -343,7 +343,7 @@ function configurarJornadaContable() {
       try {
         await window.api.operaciones.cerrarDia();
         await cargarFechaContable();
-        
+
         // Sincronización automática a Google Drive si está activa
         if (driveState && driveState.conectado && driveState.autoSync) {
           console.log('Iniciando respaldo automático en la nube...');
@@ -358,7 +358,7 @@ function configurarJornadaContable() {
         } else {
           alert('Jornada contable cerrada con éxito.');
         }
-        
+
         actualizarDashboard();
       } catch (err) {
         alert('Jornada contable cerrada, pero ocurrió un error al subir a la nube: ' + err.message);
@@ -392,7 +392,7 @@ async function cargarListasBase() {
   // Rellenar selects de clientes en movimientos
   const selectMovCli = document.getElementById('movCliente');
   const selectFiltroCli = document.getElementById('filtroCliente');
-  
+
   selectMovCli.innerHTML = '<option value="">-- Seleccione Cliente --</option>';
   selectFiltroCli.innerHTML = '<option value="">Todos los Clientes</option>';
 
@@ -425,7 +425,7 @@ async function cargarListasBase() {
   const selectMiCuentaMoneda = document.getElementById('miCuentaMoneda');
   const selectNewCtaMoneda = document.getElementById('movNewCtaMoneda');
   const selectEcoProdMoneda = document.getElementById('ecoProductoMonedaCosto');
-  
+
   selectMovMoneda.innerHTML = '<option value="">Seleccione...</option>';
   selectEcoMoneda.innerHTML = '<option value="">Seleccione...</option>';
   selectCtaMoneda.innerHTML = '<option value="">Seleccione...</option>';
@@ -484,7 +484,7 @@ async function refrescarClientes() {
   state.clientes.forEach(cli => {
     const isActivo = cli.status !== 'INACTIVO';
     const badgeClass = isActivo ? 'bg-indigo-900/40 text-indigo-400' : 'bg-slate-800 text-slate-500';
-    
+
     const trHTML = `
       <tr class="border-b border-slate-900 hover:bg-slate-900/40 cursor-pointer" onclick="seleccionarClienteFila(${cli.id_cliente}, '${cli.nombre.replace(/'/g, "\\'")}')">
         <td class="p-3 font-semibold text-slate-200 hover:text-indigo-400 transition" onclick="event.stopPropagation(); abrirOpcionesCliente(${cli.id_cliente}, '${cli.nombre.replace(/'/g, "\\'")}')">${cli.nombre}</td>
@@ -534,13 +534,13 @@ window.seleccionarClienteFila = seleccionarClienteFila;
 function abrirOpcionesCliente(idCliente, nombreCliente) {
   const modal = document.getElementById('clientOptionsModal');
   document.getElementById('clientOptionsTitle').textContent = `Opciones de ${nombreCliente}`;
-  
+
   const btnVerFicha = document.getElementById('btnOptVerFicha');
   btnVerFicha.onclick = () => {
     modal.classList.add('hidden');
     verFichaCliente(idCliente);
   };
-  
+
   const btnNuevaTransaccion = document.getElementById('btnOptNuevaTransaccion');
   btnNuevaTransaccion.onclick = () => {
     modal.classList.add('hidden');
@@ -553,7 +553,7 @@ function abrirOpcionesCliente(idCliente, nombreCliente) {
       }
     }, 150);
   };
-  
+
   modal.classList.remove('hidden');
 }
 window.abrirOpcionesCliente = abrirOpcionesCliente;
@@ -561,7 +561,7 @@ window.abrirOpcionesCliente = abrirOpcionesCliente;
 function abrirOpcionesCuenta(idCuenta, nombreCuenta, idCliente, nombreCliente) {
   const modal = document.getElementById('accountOptionsModal');
   document.getElementById('accountOptionsTitle').textContent = `Opciones de Cuenta: ${nombreCuenta}`;
-  
+
   const btnOptCtaNuevaTransaccion = document.getElementById('btnOptCtaNuevaTransaccion');
   btnOptCtaNuevaTransaccion.onclick = () => {
     modal.classList.add('hidden');
@@ -571,7 +571,7 @@ function abrirOpcionesCuenta(idCuenta, nombreCuenta, idCliente, nombreCliente) {
       if (selectMovCli) {
         selectMovCli.value = idCliente;
         await selectMovCli.dispatchEvent(new Event('change'));
-        
+
         setTimeout(() => {
           const selectMovCta = document.getElementById('movCuenta');
           if (selectMovCta) {
@@ -582,7 +582,7 @@ function abrirOpcionesCuenta(idCuenta, nombreCuenta, idCliente, nombreCliente) {
       }
     }, 150);
   };
-  
+
   modal.classList.remove('hidden');
 }
 window.abrirOpcionesCuenta = abrirOpcionesCuenta;
@@ -697,7 +697,7 @@ async function verHistorialCliente(idCliente, nombreCliente) {
   document.getElementById('histFechaInicio').value = '';
   document.getElementById('histFechaFin').value = '';
   document.getElementById('histTipo').value = '';
-  
+
   // Rellenar tipos en modal historial
   const selectHistTipo = document.getElementById('histTipo');
   selectHistTipo.innerHTML = '<option value="">Todos los Tipos</option>';
@@ -754,11 +754,10 @@ async function cargarHistorialCliente() {
         <td class="p-3">${formatearFecha(m.fecha_contable)}</td>
         <td class="p-3 text-indigo-400 font-semibold">${m.cuenta_nombre}</td>
         <td class="p-3">
-          <span class="px-1.5 py-0.5 rounded text-[9px] font-bold ${
-            m.tipo_transaccion.includes('COMPRA') ? 'bg-emerald-950 text-emerald-400' :
-            m.tipo_transaccion.includes('VENTA') ? 'bg-sky-950 text-sky-400' :
-            'bg-slate-800 text-slate-400'
-          }">${m.tipo_transaccion}</span>
+          <span class="px-1.5 py-0.5 rounded text-[9px] font-bold ${m.tipo_transaccion.includes('COMPRA') ? 'bg-emerald-950 text-emerald-400' :
+        m.tipo_transaccion.includes('VENTA') ? 'bg-sky-950 text-sky-400' :
+          'bg-slate-800 text-slate-400'
+      }">${m.tipo_transaccion}</span>
         </td>
         <td class="p-3 text-right font-bold text-slate-100 whitespace-nowrap truncate max-w-[130px]" title="${formatearNumeroMoneda(m.monto, m.moneda)} ${m.moneda}">${formatearNumeroMoneda(m.monto, m.moneda)} ${m.moneda}</td>
         <td class="p-3">${m.concepto}</td>
@@ -774,6 +773,29 @@ async function cargarHistorialCliente() {
 // ==========================================
 // TASAS DE COTIZACIÓN
 // ==========================================
+function obtenerBanderaYDetallesPar(par) {
+  const partes = par.split('/');
+  const base = partes[0] || '';
+  const destino = partes[1] || '';
+  
+  const banderas = {
+    'USD': '🇺🇸',
+    'PYG': '🇵🇾',
+    'BRL': '🇧🇷',
+    'ARS': '🇦🇷',
+    'EUR': '🇪🇺',
+    'USDT': '🪙',
+    'USDC': '🪙',
+    'BTC': '🪙',
+    'ETH': '🪙'
+  };
+
+  const banderaBase = banderas[base] || '🏳️';
+  const banderaDestino = banderas[destino] || '🏳️';
+
+  return `${banderaBase} / ${banderaDestino}`;
+}
+
 async function refrescarCambios() {
   state.cambios = await window.api.cambios.listar();
   
@@ -784,13 +806,12 @@ async function refrescarCambios() {
     state.cambios.forEach(cam => {
       const tr = `
         <tr class="border-b border-slate-900 hover:bg-slate-900/20">
-          <td class="p-3">${formatearFecha(cam.fecha_contable)}</td>
-          <td class="p-3 font-bold text-indigo-400">${cam.par_divisa}</td>
-          <td class="p-3 text-right text-emerald-455 font-semibold font-mono">${formatearCotizacion(cam.valor_compra)}</td>
-          <td class="p-3 text-right text-rose-500 font-semibold font-mono">${formatearCotizacion(cam.valor_venta)}</td>
-          <td class="p-3 text-slate-500 text-[10px]">${new Date(cam.timestamp).toLocaleString()}</td>
-          <td class="p-3 text-center">
-            <button onclick="cargarEditarCambio(${cam.id_cambio}, '${cam.par_divisa}', ${cam.valor_compra}, ${cam.valor_venta})" class="text-indigo-400 hover:text-indigo-300 text-[10px] mr-2">Editar</button>
+          <td class="p-2">${formatearFecha(cam.fecha_contable)}</td>
+          <td class="p-2 font-bold text-indigo-400 text-xs">${obtenerBanderaYDetallesPar(cam.par_divisa)} ${cam.par_divisa}</td>
+          <td class="p-2 text-right text-emerald-455 font-semibold font-mono">${formatearCotizacion(cam.valor_compra)}</td>
+          <td class="p-2 text-right text-rose-500 font-semibold font-mono">${formatearCotizacion(cam.valor_venta)}</td>
+          <td class="p-2 text-center">
+            <button onclick="cargarEditarCambio(${cam.id_cambio}, '${cam.par_divisa}', ${cam.valor_compra}, ${cam.valor_venta})" class="text-indigo-400 hover:text-indigo-300 text-[10px] mr-1.5">Editar</button>
             <button onclick="eliminarCambio(${cam.id_cambio})" class="text-rose-500 hover:text-rose-455 text-[10px]">Borrar</button>
           </td>
         </tr>
@@ -814,23 +835,23 @@ async function refrescarCambios() {
 
     const paresRegistrados = Object.values(cotizacionesActivas);
     if (paresRegistrados.length === 0) {
-      gridCot.innerHTML = `<div class="p-3 text-center text-xs text-slate-500 bg-slate-900/40 rounded-xl">Sin cotizaciones cargadas para el día de hoy.</div>`;
+      gridCot.innerHTML = `<div class="p-3 text-center text-xs text-slate-500 bg-slate-900/40 rounded-xl">Sin cotizaciones cargadas.</div>`;
     } else {
       paresRegistrados.forEach(c => {
         const fechaStr = new Date(c.timestamp).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
         gridCot.insertAdjacentHTML('beforeend', `
-          <div class="p-3.5 bg-slate-900/60 border border-slate-800/80 rounded-xl flex justify-between items-center hover:bg-slate-900/90 transition shadow-inner">
+          <div class="p-3 bg-slate-900/60 border border-slate-800/80 rounded-xl flex justify-between items-center hover:bg-slate-900/90 transition shadow-inner">
             <div>
-              <span class="text-[9px] text-slate-400 font-bold block uppercase tracking-wider">${c.par_divisa}</span>
-              <div class="flex items-baseline gap-2 mt-1">
-                <span class="text-[9px] text-emerald-450 font-semibold">C:</span>
-                <span class="text-base font-black text-emerald-400 font-mono">${formatearCotizacion(c.valor_compra)}</span>
-                <span class="text-[9px] text-rose-500 font-semibold ml-1">V:</span>
-                <span class="text-base font-black text-rose-455 font-mono">${formatearCotizacion(c.valor_venta)}</span>
+              <span class="text-[12px] text-slate-400 font-bold block uppercase tracking-wider">${obtenerBanderaYDetallesPar(c.par_divisa)} ${c.par_divisa}</span>
+              <div class="flex items-baseline gap-1.5 mt-1">
+                <span class="text-[10px] text-emerald-450 font-semibold">C:</span>
+                <span class="text-[13px] font-black text-emerald-400 font-mono">${formatearCotizacion(c.valor_compra)}</span>
+                <span class="text-[10px] text-rose-500 font-semibold ml-1">V:</span>
+                <span class="text-[13px] font-black text-rose-455 font-mono">${formatearCotizacion(c.valor_venta)}</span>
               </div>
             </div>
             <div class="text-right">
-              <span class="text-[8px] text-slate-500 italic block mt-0.5">${fechaStr}</span>
+              <span class="text-[9px] text-slate-500 italic block mt-0.5">${fechaStr}</span>
             </div>
           </div>
         `);
@@ -873,7 +894,7 @@ async function refrescarMovimientos(filtros = {}) {
   // Filtrado Global en Memoria si aplica
   const queryGlobal = document.getElementById('filtroBuscarGlobal').value.toLowerCase().trim();
   if (queryGlobal) {
-    movimientos = movimientos.filter(m => 
+    movimientos = movimientos.filter(m =>
       (m.concepto || '').toLowerCase().includes(queryGlobal) ||
       (m.observaciones || '').toLowerCase().includes(queryGlobal) ||
       (m.producto || '').toLowerCase().includes(queryGlobal) ||
@@ -893,7 +914,7 @@ async function refrescarMovimientos(filtros = {}) {
 
   movimientos.forEach(m => {
     const esEco = m.tipo_transaccion.startsWith('ECOMMERCE');
-    
+
     // Configuración visual de fecha comercial vs timestamp real
     let fechaContableContent = formatearFecha(m.fecha_contable);
     const dateReal = new Date(m.timestamp).toISOString().split('T')[0];
@@ -915,9 +936,8 @@ async function refrescarMovimientos(filtros = {}) {
           <div class="text-[10px] text-indigo-400">${m.cuenta_nombre || 'N/A'}</div>
         </td>
         <td class="p-3">
-          <span class="px-2 py-0.5 rounded text-[10px] font-bold ${
-            esIngreso ? 'bg-emerald-950 text-emerald-400 border border-emerald-900' : 'bg-rose-955 text-rose-455 border border-rose-900'
-          }">${m.tipo_transaccion}</span>
+          <span class="px-2 py-0.5 rounded text-[10px] font-bold ${esIngreso ? 'bg-emerald-950 text-emerald-400 border border-emerald-900' : 'bg-rose-955 text-rose-455 border border-rose-900'
+      }">${m.tipo_transaccion}</span>
         </td>
         <td class="p-3 text-right whitespace-nowrap truncate max-w-[150px]" title="${esIngreso ? '+' : '-'}${formatearNumeroMoneda(m.monto, m.moneda)} ${m.moneda}">
           <div class="font-bold ${esIngreso ? 'text-emerald-450' : 'text-rose-500'}">${esIngreso ? '+' : '-'}${formatearNumeroMoneda(m.monto, m.moneda)} ${m.moneda}</div>
@@ -1019,7 +1039,7 @@ async function refrescarEcommerceStock() {
 
   document.getElementById('ecoKpiVolCompra').textContent = `${formatearNumeroVisual(volCompra)} ${state.opciones.moneda_principal}`;
   document.getElementById('ecoKpiCantCompra').textContent = `${cantCompra} transacciones de compra`;
-  
+
   document.getElementById('ecoKpiVolVenta').textContent = `${formatearNumeroVisual(volVenta)} ${state.opciones.moneda_principal}`;
   document.getElementById('ecoKpiCantVenta').textContent = `${cantVenta} transacciones de venta`;
 
@@ -1078,7 +1098,7 @@ function triggerEcoProductoCostoAlert() {
   const selectEcoProd = document.getElementById('ecoProducto');
   const container = document.getElementById('ecoCostoOriginalContainer');
   const label = document.getElementById('lblEcoCostoOriginal');
-  
+
   if (!selectTipo || !selectEcoProd || !container || !label) return;
 
   const isVenta = selectTipo.value === 'ECOMMERCE / VENTA';
@@ -1111,7 +1131,7 @@ let stateProductosEco = [];
 async function refrescarEcoProductos() {
   try {
     stateProductosEco = await window.api.ecommerceProductos.listar();
-    
+
     // 1. Dibujar tabla de productos
     const tbody = document.getElementById('tablaInventarioProductos');
     if (tbody) {
@@ -1317,9 +1337,8 @@ async function compilarReporteContable() {
           <div class="text-[9px] text-indigo-400">${m.cuenta_nombre}</div>
         </td>
         <td class="p-3">
-          <span class="px-1.5 py-0.5 rounded text-[9px] font-bold ${
-            esCompra ? 'bg-rose-955 text-rose-455' : 'bg-emerald-950 text-emerald-400'
-          }">${m.tipo_transaccion}</span>
+          <span class="px-1.5 py-0.5 rounded text-[9px] font-bold ${esCompra ? 'bg-rose-955 text-rose-455' : 'bg-emerald-950 text-emerald-400'
+      }">${m.tipo_transaccion}</span>
         </td>
         <td class="p-3 text-right">${formatearNumeroVisual(m.monto)} ${m.moneda}</td>
         <td class="p-3 text-right font-bold text-slate-100">${formatearNumeroVisual(valorUSDT)} ${state.opciones.moneda_principal}</td>
@@ -1436,7 +1455,7 @@ async function cargarOpcionesSistemaYUsuario() {
   // Rellenar selectores de asignación en Opciones
   const selectPrincipal = document.getElementById('selCtaPrincipalComercial');
   const selectGastos = document.getElementById('selCtaGastosPersonales');
-  
+
   selectPrincipal.innerHTML = '<option value="">-- Ninguna --</option>';
   selectGastos.innerHTML = '<option value="">-- Ninguna --</option>';
 
@@ -1569,7 +1588,7 @@ async function refrescarAdminTipos() {
   const tipos = await window.api.tiposTransacciones.listar();
   const list = document.getElementById('listaAdminTipos');
   list.innerHTML = '';
-  
+
   tipos.forEach(t => {
     list.insertAdjacentHTML('beforeend', `
       <li class="flex justify-between items-center p-2 hover:bg-slate-900/60">
@@ -1612,7 +1631,7 @@ async function refrescarAdminMonedas() {
   const de = document.getElementById('adminRelDestino');
   or.innerHTML = '';
   de.innerHTML = '';
-  
+
   monedas.forEach(m => {
     or.insertAdjacentHTML('beforeend', `<option value="${m.siglas}">${m.siglas}</option>`);
     de.insertAdjacentHTML('beforeend', `<option value="${m.siglas}">${m.siglas}</option>`);
@@ -1642,7 +1661,7 @@ async function refrescarAdminRelaciones() {
   const rels = await window.api.relaciones.listar();
   const list = document.getElementById('listaAdminRelaciones');
   list.innerHTML = '';
-  
+
   rels.forEach(r => {
     list.insertAdjacentHTML('beforeend', `
       <li class="flex justify-between items-center p-2 hover:bg-slate-900/60">
@@ -1666,7 +1685,7 @@ window.eliminarAdminRelacion = eliminarAdminRelacion;
 // CONTROL DE FORMULARIOS & EVENTOS
 // ==========================================
 function configurarFormularios() {
-  
+
   // --- Formulario Movimiento ---
   const selectCli = document.getElementById('movCliente');
   const selectCta = document.getElementById('movCuenta');
@@ -1676,11 +1695,11 @@ function configurarFormularios() {
   selectCli.addEventListener('change', async () => {
     const idCliente = selectCli.value;
     selectCta.innerHTML = '<option value="">Seleccione...</option>';
-    
+
     if (idCliente) {
       const cuentas = await window.api.cuentas.listar(idCliente);
       const cuentasActivas = cuentas.filter(c => c.status === 'ACTIVO');
-      
+
       cuentasActivas.forEach(c => {
         selectCta.insertAdjacentHTML('beforeend', `<option value="${c.id_cuenta}" data-moneda="${c.moneda}">${c.nombre_cuenta} (${c.moneda})</option>`);
       });
@@ -1694,7 +1713,7 @@ function configurarFormularios() {
             freqs[m.id_cuenta] = (freqs[m.id_cuenta] || 0) + 1;
           }
         });
-        
+
         let maxFreq = -1;
         let bestCtaId = cuentasActivas[0].id_cuenta;
         cuentasActivas.forEach(c => {
@@ -1704,7 +1723,7 @@ function configurarFormularios() {
             bestCtaId = c.id_cuenta;
           }
         });
-        
+
         selectCta.value = bestCtaId;
         selectCta.dispatchEvent(new Event('change'));
       }
@@ -1775,7 +1794,7 @@ function configurarFormularios() {
         alert('Debe seleccionar un producto válido de la lista.');
         return;
       }
-      
+
       ecoData = {
         id_producto: selectedProd.id_producto,
         producto: selectedProd.nombre,
@@ -1837,7 +1856,7 @@ function configurarFormularios() {
       alert('Cliente rápido registrado.');
       document.getElementById('movNuevoClienteModal').classList.add('hidden');
       await cargarListasBase();
-      
+
       // Seleccionar el nuevo cliente creado
       if (res && res.lastID) {
         document.getElementById('movCliente').value = res.lastID;
@@ -1886,14 +1905,14 @@ function configurarFormularios() {
   // --- Botón de Creación Rápida de Producto E-Commerce ---
   document.getElementById('btnMovNuevoEcoProducto').addEventListener('click', () => {
     document.getElementById('formMovNuevoEcoProducto').reset();
-    
+
     // Rellenar monedas en el modal rápido
     const selectMon = document.getElementById('movNewProdMonedaCosto');
     selectMon.innerHTML = '';
     state.monedas.filter(m => m.status === 'ACTIVO').forEach(m => {
       selectMon.insertAdjacentHTML('beforeend', `<option value="${m.siglas}">${m.siglas}</option>`);
     });
-    
+
     document.getElementById('movNuevoEcoProductoModal').classList.remove('hidden');
   });
 
@@ -2018,7 +2037,7 @@ function configurarFormularios() {
 
   document.getElementById('formGastoPersonal').addEventListener('submit', async (e) => {
     e.preventDefault();
-    
+
     if (!state.fechaContableActiva) {
       alert('Debe iniciar la jornada contable comercial.');
       return;
@@ -2027,7 +2046,7 @@ function configurarFormularios() {
     const idGasto = document.getElementById('gastoId').value;
     const miCtaId = document.getElementById('gastoMiCuenta').value;
     const tipoOp = document.getElementById('gastoTipoOperacion').value;
-    
+
     const mData = {
       id_cliente: null,
       id_cuenta: parseInt(miCtaId),
@@ -2102,7 +2121,7 @@ function configurarFormularios() {
       await window.api.cambios.guardar(camData);
       alert('Cotización guardada.');
     }
-    
+
     document.getElementById('formCambio').reset();
     document.getElementById('cambioId').value = '';
     document.getElementById('btnCancelarCambio').classList.add('hidden');
@@ -2174,7 +2193,7 @@ function configurarFormularios() {
 
   // --- Cargar y Editar Datos Empresa (Ajustes de Usuario Modal) ---
   const modalEmpresa = document.getElementById('editarEmpresaModal');
-  
+
   document.getElementById('btnEditarDatosEmpresa').addEventListener('click', async () => {
     document.getElementById('editEmpresaNombre').value = await window.api.opciones.get('empresa_nombre') || '';
     document.getElementById('editEmpresaRuc').value = await window.api.opciones.get('empresa_ruc') || '';
@@ -2203,7 +2222,7 @@ function configurarFormularios() {
     await window.api.opciones.set('empresa_email', document.getElementById('editEmpresaEmail').value);
     await window.api.opciones.set('empresa_telefono', document.getElementById('editEmpresaTelefono').value);
     await window.api.opciones.set('moneda_principal', document.getElementById('editEmpresaMoneda').value);
-    
+
     modalEmpresa.classList.add('hidden');
     alert('Datos corporativos guardados de forma segura.');
     await cargarListasBase();
@@ -2345,7 +2364,7 @@ function configurarFormularios() {
 
   // --- Módulo Reportes: Filtrados y Compilados ---
   document.getElementById('btnGenerarReporte').addEventListener('click', compilarReporteContable);
-  
+
   document.getElementById('btnExportPDFReporte').addEventListener('click', async () => {
     const filtros = obtenerFiltrosReportes();
     const path = await window.api.reportes.descargarPDF(filtros);
@@ -2566,7 +2585,7 @@ function obtenerFiltrosReportes() {
   const temporal = document.getElementById('repFiltroTiempo').value;
   const clienteId = document.getElementById('repCliente').value;
   const filtros = {};
-  
+
   if (clienteId) filtros.id_cliente = parseInt(clienteId);
 
   if (temporal === 'dia') {
@@ -2625,7 +2644,7 @@ async function editarCliente(id) {
   document.getElementById('clienteMail').value = cliente.mail;
   document.getElementById('clienteStatus').value = cliente.status || 'ACTIVO';
   document.getElementById('clienteObservaciones').value = cliente.observaciones;
-  
+
   resetearSeleccionCuentas();
 
   document.getElementById('clienteNombre').focus();
@@ -2672,7 +2691,7 @@ window.eliminarMovimiento = eliminarMovimiento;
 // ==========================================
 async function actualizarDashboard() {
   const todos = await window.api.movimientos.listar({});
-  
+
   let balanceGeneral = 0.0;
   let efectivo = 0.0;
   let bancos = 0.0;
@@ -2707,7 +2726,7 @@ async function actualizarDashboard() {
     const esCompra = m.tipo_transaccion.includes('COMPRA') || m.tipo_transaccion === 'GASTO' || m.tipo_transaccion === 'GASTO_PERSONAL';
     const esVenta = m.tipo_transaccion.includes('VENTA');
     const esAjuste = m.tipo_transaccion === 'AJUSTE';
-    
+
     let valorUSDT = m.monto;
     if (m.moneda !== state.opciones.moneda_principal) {
       valorUSDT = m.monto * m.valor_cambio;
@@ -2950,7 +2969,7 @@ function configurarActualizaciones() {
     // Si fue automático, cambiamos el texto/estilo del botón de forma elegante y no invasiva
     btn.textContent = '¡Update Disponible!';
     btn.className = 'text-emerald-450 font-bold animate-pulse hover:text-emerald-300';
-    
+
     // Si fue manual, preguntamos inmediatamente
     if (!isAutoCheck) {
       if (confirm('Nueva versión de FENIX Suite disponible. ¿Desea iniciar la descarga ahora en segundo plano?')) {
