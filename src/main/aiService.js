@@ -22,8 +22,8 @@ async function getAIClient() {
 }
 
 // Helper para obtener el Prompt del Sistema personalizado por el usuario
-async function getSystemPrompt(tipoDefault) {
-  const promptRow = await db.dbGet("SELECT valor_ajuste FROM opciones WHERE clave_ajuste = 'ai_system_prompt'");
+async function getSystemPrompt(key, tipoDefault) {
+  const promptRow = await db.dbGet("SELECT valor_ajuste FROM opciones WHERE clave_ajuste = ?", [key]);
   return promptRow && promptRow.valor_ajuste ? promptRow.valor_ajuste : tipoDefault;
 }
 
@@ -50,7 +50,7 @@ async function procesarCatalogo(filePath) {
   const base64Data = fileBuffer.toString('base64');
 
   const defaultPrompt = 'Analiza el siguiente catálogo comercial (imagen o documento PDF) y extrae una lista estructurada con los nombres de todos los productos legibles y sus respectivos precios. Si hay varios precios, prefiere el precio mayorista o de venta directa.';
-  const systemPrompt = await getSystemPrompt(defaultPrompt);
+  const systemPrompt = await getSystemPrompt('ai_prompt_catalogos', defaultPrompt);
 
   const response = await ai.models.generateContent({
     model: 'gemini-1.5-flash',
@@ -110,7 +110,7 @@ async function procesarComprobante(filePath) {
   const base64Data = fileBuffer.toString('base64');
 
   const defaultPrompt = 'Extrae la información financiera clave de esta captura de pantalla o fotografía de comprobante de transferencia bancaria o pago.';
-  const systemPrompt = await getSystemPrompt(defaultPrompt);
+  const systemPrompt = await getSystemPrompt('ai_prompt_comprobantes', defaultPrompt);
 
   const response = await ai.models.generateContent({
     model: 'gemini-1.5-flash',
@@ -156,7 +156,9 @@ async function procesarComprobante(filePath) {
 async function buscarImagenesGrounding(nombreProducto) {
   const ai = await getAIClient();
 
-  const prompt = `Search Google for the product "${nombreProducto}". Find exactly 3 direct URLs of high-quality square (1:1 aspect ratio) images of this product, preferably with clean studio backgrounds. Return strictly a JSON object matching the schema.`;
+  const defaultPrompt = 'Search Google for the product "{producto}". Find exactly 3 direct URLs of high-quality square (1:1 aspect ratio) images of this product, preferably with clean studio backgrounds. Return strictly a JSON object matching the schema.';
+  const systemPromptTemplate = await getSystemPrompt('ai_prompt_grounding', defaultPrompt);
+  const prompt = systemPromptTemplate.replace('{producto}', nombreProducto);
 
   const response = await ai.models.generateContent({
     model: 'gemini-1.5-flash',

@@ -2256,10 +2256,22 @@
                   <input type="password" id="txtAIApiKey" placeholder="AIzaSy..." class="w-full glass-input rounded-lg px-3 py-2 text-xs">
                 </div>
 
-                <!-- Prompt del Sistema -->
+                 <!-- Prompts del Sistema Independientes -->
                 <div class="space-y-1">
-                  <label for="txtAISystemPrompt" class="block text-[10px] text-slate-400 font-semibold">Instrucciones del Sistema (System Prompt)</label>
-                  <textarea id="txtAISystemPrompt" rows="4" placeholder="Escriba las instrucciones para el comportamiento de Gemini..." 
+                  <label for="txtAICatalogPrompt" class="block text-[10px] text-slate-400 font-semibold">Prompt: Importación de Catálogos</label>
+                  <textarea id="txtAICatalogPrompt" rows="3" placeholder="Instrucciones para lectura de catálogos..." 
+                    class="w-full glass-input rounded-lg px-3 py-2 text-xs font-sans resize-none"></textarea>
+                </div>
+
+                <div class="space-y-1">
+                  <label for="txtAIReceiptPrompt" class="block text-[10px] text-slate-400 font-semibold">Prompt: Extracción de Comprobantes</label>
+                  <textarea id="txtAIReceiptPrompt" rows="3" placeholder="Instrucciones para lectura de comprobantes de pago..." 
+                    class="w-full glass-input rounded-lg px-3 py-2 text-xs font-sans resize-none"></textarea>
+                </div>
+
+                <div class="space-y-1">
+                  <label for="txtAIGroundingPrompt" class="block text-[10px] text-slate-400 font-semibold">Prompt: Búsqueda Grounding (Imágenes)</label>
+                  <textarea id="txtAIGroundingPrompt" rows="3" placeholder="Instrucciones para búsqueda visual de productos..." 
                     class="w-full glass-input rounded-lg px-3 py-2 text-xs font-sans resize-none"></textarea>
                 </div>
                 

@@ -3705,20 +3705,31 @@ async function configurarAjustesYCalculadora() {
   // --- AJUSTES DE INTELIGENCIA ARTIFICIAL (GEMINI) ---
   const chkAI = document.getElementById('chkAIEnabled');
   const txtAIApiKey = document.getElementById('txtAIApiKey');
-  const txtAISystemPrompt = document.getElementById('txtAISystemPrompt');
+  const txtAICatalogPrompt = document.getElementById('txtAICatalogPrompt');
+  const txtAIReceiptPrompt = document.getElementById('txtAIReceiptPrompt');
+  const txtAIGroundingPrompt = document.getElementById('txtAIGroundingPrompt');
   const btnGuardarAI = document.getElementById('btnGuardarAjustesAI');
 
-  if (chkAI && txtAIApiKey && txtAISystemPrompt && btnGuardarAI) {
-    // Cargar
+  if (chkAI && txtAIApiKey && txtAICatalogPrompt && txtAIReceiptPrompt && txtAIGroundingPrompt && btnGuardarAI) {
+    // Cargar con valores optimizados por defecto si no existen
     chkAI.checked = (await window.api.opciones.get('ai_enabled')) === '1';
     txtAIApiKey.value = await window.api.opciones.get('ai_api_key') || '';
-    txtAISystemPrompt.value = await window.api.opciones.get('ai_system_prompt') || '';
+
+    const defaultCatalogPrompt = 'Analiza el siguiente catálogo comercial (imagen o documento PDF) y extrae una lista estructurada con los nombres de todos los productos legibles y sus respectivos precios. Si hay varios precios, prefiere el precio mayorista o de venta directa.';
+    const defaultReceiptPrompt = 'Extrae la información financiera clave de esta captura de pantalla o fotografía de comprobante de transferencia bancaria o pago.';
+    const defaultGroundingPrompt = 'Search Google for the product "{producto}". Find exactly 3 direct URLs of high-quality square (1:1 aspect ratio) images of this product, preferably with clean studio backgrounds. Return strictly a JSON object matching the schema.';
+
+    txtAICatalogPrompt.value = await window.api.opciones.get('ai_prompt_catalogos') || defaultCatalogPrompt;
+    txtAIReceiptPrompt.value = await window.api.opciones.get('ai_prompt_comprobantes') || defaultReceiptPrompt;
+    txtAIGroundingPrompt.value = await window.api.opciones.get('ai_prompt_grounding') || defaultGroundingPrompt;
 
     // Guardar
     btnGuardarAI.addEventListener('click', async () => {
       await window.api.opciones.set('ai_enabled', chkAI.checked ? '1' : '0');
       await window.api.opciones.set('ai_api_key', txtAIApiKey.value.trim());
-      await window.api.opciones.set('ai_system_prompt', txtAISystemPrompt.value.trim());
+      await window.api.opciones.set('ai_prompt_catalogos', txtAICatalogPrompt.value.trim());
+      await window.api.opciones.set('ai_prompt_comprobantes', txtAIReceiptPrompt.value.trim());
+      await window.api.opciones.set('ai_prompt_grounding', txtAIGroundingPrompt.value.trim());
       alert('Configuración de Inteligencia Artificial (Gemini) guardada con éxito.');
     });
   }
