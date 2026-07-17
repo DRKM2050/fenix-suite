@@ -3,12 +3,29 @@ const path = require('path');
 const fs = require('fs');
 const { autoUpdater } = require('electron-updater');
 
+// Bloqueo de instancia única para evitar múltiples ventanas abiertas
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  app.quit();
+  return;
+}
+
 // Configuración de Hot-Reloading en desarrollo
 if (!app.isPackaged) {
   try {
     require('electron-reload')(path.join(__dirname, '../..'), {
       electron: path.join(__dirname, '../../node_modules/.bin/electron'),
-      hardResetMethod: 'exit'
+      hardResetMethod: 'exit',
+      ignored: [
+        /node_modules/,
+        /\.git/,
+        /dist/,
+        /assets\/img\/products/,
+        /.*\.db$/,
+        /.*\.pdf$/,
+        /.*\.xlsx$/,
+        /temp_.*\.html$/
+      ]
     });
   } catch (e) {
     console.log('electron-reload no inicializado:', e);
@@ -25,6 +42,13 @@ let mainWindow;
 // Configurar el comportamiento de electron-updater
 autoUpdater.autoDownload = false; // El usuario elige cuándo descargar
 autoUpdater.logger = console;
+
+app.on('second-instance', () => {
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
+  }
+});
 
 function crearVentana() {
   mainWindow = new BrowserWindow({
