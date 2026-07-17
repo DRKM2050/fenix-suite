@@ -3702,6 +3702,27 @@ async function configurarAjustesYCalculadora() {
     });
   }
 
+  // --- AJUSTES DE INTELIGENCIA ARTIFICIAL (GEMINI) ---
+  const chkAI = document.getElementById('chkAIEnabled');
+  const txtAIApiKey = document.getElementById('txtAIApiKey');
+  const txtAISystemPrompt = document.getElementById('txtAISystemPrompt');
+  const btnGuardarAI = document.getElementById('btnGuardarAjustesAI');
+
+  if (chkAI && txtAIApiKey && txtAISystemPrompt && btnGuardarAI) {
+    // Cargar
+    chkAI.checked = (await window.api.opciones.get('ai_enabled')) === '1';
+    txtAIApiKey.value = await window.api.opciones.get('ai_api_key') || '';
+    txtAISystemPrompt.value = await window.api.opciones.get('ai_system_prompt') || '';
+
+    // Guardar
+    btnGuardarAI.addEventListener('click', async () => {
+      await window.api.opciones.set('ai_enabled', chkAI.checked ? '1' : '0');
+      await window.api.opciones.set('ai_api_key', txtAIApiKey.value.trim());
+      await window.api.opciones.set('ai_system_prompt', txtAISystemPrompt.value.trim());
+      alert('Configuración de Inteligencia Artificial (Gemini) guardada con éxito.');
+    });
+  }
+
   // --- CALCULADORA FLOTANTE ---
   const btnToggleCalc = document.getElementById('btnToggleCalculadora');
   const calcWin = document.getElementById('floatingCalculator');
@@ -3869,3 +3890,405 @@ async function eliminarPlataforma(id) {
   }
 }
 window.eliminarPlataforma = eliminarPlataforma;
+
+// ==========================================
+// MOTOR DE INTELIGENCIA ARTIFICIAL (GEMINI)
+// ==========================================
+
+// --- Modalidad B: Registro desde Comprobantes ---
+const btnAICargarComprobante = document.getElementById('btnAICargarComprobante');
+if (btnAICargarComprobante) {
+  btnAICargarComprobante.addEventListener('click', async () => {
+    try {
+      const res = await window.api.ai.seleccionarComprobante();
+      if (res.success && res.filePath) {
+        btnAICargarComprobante.disabled = true;
+        const originalText = btnAICargarComprobante.innerHTML;
+        btnAICargarComprobante.innerHTML = `
+          <svg class="animate-spin h-3.5 w-3.5 text-indigo-400" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          Procesando...
+        `;
+
+        const extracted = await window.api.ai.procesarComprobante(res.filePath);
+        
+        // Autocompletar el formulario
+        if (document.getElementById('movMonto')) {
+          document.getElementById('movMonto').value = extracted.monto || 0.0;
+        }
+        if (document.getElementById('movFecha')) {
+          document.getElementById('movFecha').value = extracted.fecha || '';
+        }
+        if (document.getElementById('movConcepto')) {
+          document.getElementById('movConcepto').value = `Auto-IA: ${extracted.concepto || 'Transferencia'} (Banco: ${extracted.banco_origen || 'Origen'} -> ${extracted.banco_destino || 'Destino'})`;
+        }
+
+        alert('¡Comprobante procesado con éxito!\nEl formulario de Nueva Operación ha sido autocompletado para su verificación.');
+        btnAICargarComprobante.disabled = false;
+        btnAICargarComprobante.innerHTML = originalText;
+      }
+    } catch (err) {
+      alert('Error al procesar comprobante con IA: ' + err.message);
+      btnAICargarComprobante.disabled = false;
+      btnAICargarComprobante.innerHTML = `
+        <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+        IA: Leer Comprobante
+      `;
+    }
+  });
+}
+
+// --- Modalidad A: Importación de Catálogos ---
+let stateAIImportProducts = [];
+let groundingTargetRowIndex = null;
+
+const btnAIImportarCatalogo = document.getElementById('btnAIImportarCatalogo');
+const aiImportModal = document.getElementById('aiImportCatalogModal');
+const btnCloseAIImportModal = document.getElementById('btnCloseAIImportModal');
+const btnAICancelModal = document.getElementById('btnAICancelModal');
+
+const aiStep1Container = document.getElementById('aiStep1Container');
+const aiStep2Container = document.getElementById('aiStep2Container');
+const aiLoadingIndicator = document.getElementById('aiLoadingIndicator');
+
+const btnAIAddRawRow = document.getElementById('btnAIAddRawRow');
+const btnAIStep1Next = document.getElementById('btnAIStep1Next');
+const btnAIStep2Back = document.getElementById('btnAIStep2Back');
+const btnAIStep2Confirm = document.getElementById('btnAIStep2Confirm');
+
+const tablaRaw = document.getElementById('tablaAIRawProductos');
+const tablaEnrich = document.getElementById('tablaAIEnrichProductos');
+
+if (btnAIImportarCatalogo) {
+  btnAIImportarCatalogo.addEventListener('click', async () => {
+    try {
+      const res = await window.api.ai.seleccionarCatalogo();
+      if (res.success && res.filePath) {
+        // Mostrar Modal y Loading
+        aiImportModal.classList.remove('hidden');
+        aiLoadingIndicator.classList.remove('hidden');
+        aiStep1Container.classList.add('hidden');
+        aiStep2Container.classList.add('hidden');
+        btnAIStep1Next.classList.add('hidden');
+        btnAIStep2Back.classList.add('hidden');
+        btnAIStep2Confirm.classList.add('hidden');
+
+        // Resetear Paso 1 y Paso 2 Badges
+        document.getElementById('aiStep1Badge').className = 'h-6 w-6 rounded-full bg-indigo-600 text-white font-bold text-xs flex items-center justify-center border border-indigo-500';
+        document.getElementById('aiStep1Text').className = 'text-xs font-bold text-slate-200';
+        document.getElementById('aiStep2Badge').className = 'h-6 w-6 rounded-full bg-slate-800 text-slate-500 font-bold text-xs flex items-center justify-center border border-slate-750';
+        document.getElementById('aiStep2Text').className = 'text-xs font-bold text-slate-500';
+
+        const data = await window.api.ai.procesarCatalogo(res.filePath);
+        stateAIImportProducts = data.productos || [];
+
+        renderAIStep1Table();
+
+        aiLoadingIndicator.classList.add('hidden');
+        aiStep1Container.classList.remove('hidden');
+        btnAIStep1Next.classList.remove('hidden');
+      }
+    } catch (err) {
+      alert('Error al importar catálogo con IA: ' + err.message);
+      aiImportModal.classList.add('hidden');
+    }
+  });
+}
+
+function renderAIStep1Table() {
+  if (!tablaRaw) return;
+  tablaRaw.innerHTML = '';
+  if (stateAIImportProducts.length === 0) {
+    tablaRaw.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-slate-500 text-xs">No se encontraron productos legibles.</td></tr>`;
+    return;
+  }
+  stateAIImportProducts.forEach((p, idx) => {
+    const tr = `
+      <tr class="border-b border-slate-900/60 hover:bg-slate-900/10">
+        <td class="p-3">
+          <input type="text" value="${p.producto}" class="w-full bg-slate-900 border border-slate-800 rounded px-2.5 py-1.5 text-xs text-slate-100" id="rawProdName_${idx}">
+        </td>
+        <td class="p-3">
+          <input type="number" step="any" value="${p.precio}" class="w-full bg-slate-900 border border-slate-800 rounded px-2.5 py-1.5 text-xs text-right text-indigo-400 font-semibold" id="rawProdPrice_${idx}">
+        </td>
+        <td class="p-3 text-center">
+          <button type="button" onclick="eliminarAIRawRow(${idx})" class="text-rose-500 hover:text-rose-455 font-bold text-xs">Eliminar</button>
+        </td>
+      </tr>
+    `;
+    tablaRaw.insertAdjacentHTML('beforeend', tr);
+  });
+}
+
+window.eliminarAIRawRow = (idx) => {
+  stateAIImportProducts.splice(idx, 1);
+  renderAIStep1Table();
+};
+
+if (btnAIAddRawRow) {
+  btnAIAddRawRow.addEventListener('click', () => {
+    stateAIImportProducts.push({ producto: 'Nuevo Producto', precio: 0.0 });
+    renderAIStep1Table();
+  });
+}
+
+const closeAIImportModal = () => {
+  if (aiImportModal) aiImportModal.classList.add('hidden');
+  stateAIImportProducts = [];
+};
+
+if (btnCloseAIImportModal) btnCloseAIImportModal.addEventListener('click', closeAIImportModal);
+if (btnAICancelModal) btnAICancelModal.addEventListener('click', closeAIImportModal);
+
+if (btnAIStep1Next) {
+  btnAIStep1Next.addEventListener('click', () => {
+    // Leer cambios del Paso 1
+    const cleanedList = [];
+    stateAIImportProducts.forEach((_, idx) => {
+      const nameVal = document.getElementById(`rawProdName_${idx}`).value || '';
+      const priceVal = parseFloat(document.getElementById(`rawProdPrice_${idx}`).value) || 0.0;
+      if (nameVal) {
+        cleanedList.push({ producto: nameVal, precio: priceVal, imagen: null, proveedor_id: '' });
+      }
+    });
+
+    stateAIImportProducts = cleanedList;
+
+    if (stateAIImportProducts.length === 0) {
+      alert('Debe tener al menos un producto válido para continuar.');
+      return;
+    }
+
+    // Cambiar a Paso 2
+    aiStep1Container.classList.add('hidden');
+    btnAIStep1Next.classList.add('hidden');
+    aiStep2Container.classList.remove('hidden');
+    btnAIStep2Back.classList.remove('hidden');
+    btnAIStep2Confirm.classList.remove('hidden');
+
+    document.getElementById('aiStep1Badge').className = 'h-6 w-6 rounded-full bg-slate-800 text-slate-500 font-bold text-xs flex items-center justify-center border border-slate-750';
+    document.getElementById('aiStep1Text').className = 'text-xs font-bold text-slate-500';
+    document.getElementById('aiStep2Badge').className = 'h-6 w-6 rounded-full bg-indigo-600 text-white font-bold text-xs flex items-center justify-center border border-indigo-500';
+    document.getElementById('aiStep2Text').className = 'text-xs font-bold text-slate-200';
+
+    renderAIStep2Table();
+  });
+}
+
+if (btnAIStep2Back) {
+  btnAIStep2Back.addEventListener('click', () => {
+    // Guardar cambios actuales de Proveedores e Imagen
+    stateAIImportProducts.forEach((p, idx) => {
+      const provEl = document.getElementById(`enrichProv_${idx}`);
+      const imgEl = document.getElementById(`enrichImgVal_${idx}`);
+      if (provEl) p.proveedor_id = provEl.value;
+      if (imgEl) p.imagen = imgEl.value;
+    });
+
+    // Volver a Paso 1
+    aiStep2Container.classList.add('hidden');
+    btnAIStep2Back.classList.add('hidden');
+    btnAIStep2Confirm.classList.add('hidden');
+    aiStep1Container.classList.remove('hidden');
+    btnAIStep1Next.classList.remove('hidden');
+
+    document.getElementById('aiStep1Badge').className = 'h-6 w-6 rounded-full bg-indigo-600 text-white font-bold text-xs flex items-center justify-center border border-indigo-500';
+    document.getElementById('aiStep1Text').className = 'text-xs font-bold text-slate-200';
+    document.getElementById('aiStep2Badge').className = 'h-6 w-6 rounded-full bg-slate-800 text-slate-500 font-bold text-xs flex items-center justify-center border border-slate-750';
+    document.getElementById('aiStep2Text').className = 'text-xs font-bold text-slate-500';
+
+    renderAIStep1Table();
+  });
+}
+
+function renderAIStep2Table() {
+  if (!tablaEnrich) return;
+  tablaEnrich.innerHTML = '';
+
+  // Generar opciones de proveedores basados en los clientes activos (tipo PROVEEDOR o todos los clientes)
+  let providerOptions = `<option value="">-- Seleccionar --</option>`;
+  if (state.clientes && state.clientes.length > 0) {
+    state.clientes.forEach(c => {
+      providerOptions += `<option value="${c.id_cliente}">${c.nombre} (${c.tipo_cliente || 'CLIENTE'})</option>`;
+    });
+  }
+
+  stateAIImportProducts.forEach((p, idx) => {
+    const tr = `
+      <tr class="border-b border-slate-900/60 hover:bg-slate-900/10">
+        <td class="p-3 font-bold text-slate-200">${p.producto}</td>
+        <td class="p-3 text-right font-semibold text-slate-400 font-mono">${formatearNumeroVisual(p.precio)}</td>
+        <td class="p-3">
+          <select id="enrichProv_${idx}" class="w-full bg-slate-900 border border-slate-800 rounded px-2.5 py-1.5 text-xs text-slate-100">
+            ${providerOptions}
+          </select>
+        </td>
+        <td class="p-3">
+          <div class="flex items-center justify-center gap-2">
+            <div class="h-8 w-8 bg-slate-900/60 rounded border border-slate-800 flex items-center justify-center overflow-hidden">
+              <img id="enrichPreview_${idx}" src="${p.imagen ? `../../assets/img/products/${p.imagen}` : ''}" 
+                class="h-full w-full object-contain ${p.imagen ? '' : 'hidden'}">
+            </div>
+            <input type="hidden" id="enrichImgVal_${idx}" value="${p.imagen || ''}">
+            <button type="button" onclick="buscarImagenIA(${idx})" class="bg-indigo-650/20 hover:bg-indigo-650/40 text-indigo-400 text-[10px] font-bold px-2 py-1 rounded transition border border-indigo-500/20">
+              Buscar con IA
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+    tablaEnrich.insertAdjacentHTML('beforeend', tr);
+
+    // Seleccionar valor anterior de proveedor si existe
+    if (p.proveedor_id) {
+      setTimeout(() => {
+        const provEl = document.getElementById(`enrichProv_${idx}`);
+        if (provEl) provEl.value = p.proveedor_id;
+      }, 50);
+    }
+  });
+}
+
+// --- Grounding Visual Selector ---
+const groundingModal = document.getElementById('aiGroundingSelectModal');
+const btnCloseAIGroundingModal = document.getElementById('btnCloseAIGroundingModal');
+const btnCancelAIGrounding = document.getElementById('btnCancelAIGrounding');
+const groundingLoading = document.getElementById('aiGroundingLoading');
+const groundingResults = document.getElementById('aiGroundingResults');
+
+window.buscarImagenIA = async (idx) => {
+  groundingTargetRowIndex = idx;
+  const p = stateAIImportProducts[idx];
+  if (!p) return;
+
+  groundingModal.classList.remove('hidden');
+  groundingLoading.classList.remove('hidden');
+  groundingResults.innerHTML = '';
+
+  try {
+    const res = await window.api.ai.buscarImagenes(p.producto);
+    const urls = res.urls || [];
+    
+    groundingLoading.classList.add('hidden');
+    groundingResults.innerHTML = '';
+
+    if (urls.length === 0) {
+      groundingResults.innerHTML = `<div class="col-span-3 py-6 text-center text-slate-500 text-xs">No se encontraron imágenes en la web para este producto.</div>`;
+      return;
+    }
+
+    urls.forEach((url, uidx) => {
+      const card = `
+        <div onclick="seleccionarImagenDeGrounding('${url}', ${uidx})" id="groundingCard_${uidx}" 
+          class="glass-card p-3 rounded-2xl flex flex-col items-center justify-center border border-slate-800 hover:border-indigo-500 transition cursor-pointer text-center space-y-2">
+          <div class="h-28 w-28 rounded-xl bg-white overflow-hidden flex items-center justify-center border border-slate-750">
+            <img src="${url}" class="h-full w-full object-contain">
+          </div>
+          <span class="text-[9px] text-slate-500 truncate w-full px-1">${url}</span>
+        </div>
+      `;
+      groundingResults.insertAdjacentHTML('beforeend', card);
+    });
+  } catch (err) {
+    alert('Error al buscar imágenes con Grounding: ' + err.message);
+    groundingModal.classList.add('hidden');
+  }
+};
+
+window.seleccionarImagenDeGrounding = async (url, cardIdx) => {
+  const card = document.getElementById(`groundingCard_${cardIdx}`);
+  if (card) {
+    card.style.opacity = '0.5';
+    card.innerHTML = `
+      <div class="py-8 flex flex-col items-center justify-center space-y-2">
+        <svg class="animate-spin h-5 w-5 text-indigo-400" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span class="text-[9px] text-indigo-400 font-semibold">Descargando...</span>
+      </div>
+    `;
+  }
+
+  try {
+    const fileName = await window.api.ai.descargarImagen(url);
+    const idx = groundingTargetRowIndex;
+    if (idx !== null && stateAIImportProducts[idx]) {
+      stateAIImportProducts[idx].imagen = fileName;
+      const imgHidden = document.getElementById(`enrichImgVal_${idx}`);
+      const imgEl = document.getElementById(`enrichPreview_${idx}`);
+      if (imgHidden) imgHidden.value = fileName;
+      if (imgEl) {
+        imgEl.src = `../../assets/img/products/${fileName}`;
+        imgEl.classList.remove('hidden');
+      }
+    }
+    groundingModal.classList.add('hidden');
+  } catch (err) {
+    alert('Error al descargar y asignar la imagen: ' + err.message);
+    groundingModal.classList.add('hidden');
+  }
+};
+
+const closeGroundingModal = () => {
+  if (groundingModal) groundingModal.classList.add('hidden');
+};
+
+if (btnCloseAIGroundingModal) btnCloseAIGroundingModal.addEventListener('click', closeGroundingModal);
+if (btnCancelAIGrounding) btnCancelAIGrounding.addEventListener('click', closeGroundingModal);
+
+// --- Guardar la importación masiva en SQLite ---
+if (btnAIStep2Confirm) {
+  btnAIStep2Confirm.addEventListener('click', async () => {
+    // Validar proveedores
+    let valid = true;
+    stateAIImportProducts.forEach((p, idx) => {
+      const provEl = document.getElementById(`enrichProv_${idx}`);
+      if (provEl) p.proveedor_id = provEl.value;
+      if (!p.proveedor_id) {
+        valid = false;
+      }
+    });
+
+    if (!valid) {
+      alert('Por favor, asigne un proveedor a todos los productos antes de importar.');
+      return;
+    }
+
+    try {
+      btnAIStep2Confirm.disabled = true;
+      btnAIStep2Confirm.textContent = 'Importando...';
+
+      for (const p of stateAIImportProducts) {
+        // Estructura de producto SQLite
+        const obj = {
+          nombre: p.producto,
+          sku: `IA-${p.producto.toUpperCase().substring(0, 4)}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
+          stock: 0,
+          moneda_costo: 'USDT',
+          monto_costo: p.precio,
+          cambio_costo: 1.0,
+          observaciones: 'Importado masivamente vía asistente IA',
+          precio_venta: p.precio * 1.2, // Margen predeterminado del 20%
+          imagen: p.imagen || null,
+          es_oferta: 0
+        };
+
+        await window.api.ecommerceProductos.crear(obj);
+      }
+
+      alert('¡Importación masiva completada con éxito!\nTodos los productos han sido registrados en la base de datos.');
+      closeAIImportModal();
+      await refrescarEcoProductos();
+    } catch (err) {
+      alert('Error durante la importación masiva: ' + err.message);
+      btnAIStep2Confirm.disabled = false;
+      btnAIStep2Confirm.textContent = 'Confirmar e Importar al Stock';
+    }
+  });
+}

@@ -36,6 +36,7 @@ if (!app.isPackaged) {
 const db = require('./db');
 const reports = require('./reports');
 const driveService = require('./driveService');
+const aiService = require('./aiService');
 
 let mainWindow;
 
@@ -773,6 +774,51 @@ ipcMain.handle('rep:descargar-excel', async (event, filtros) => {
 ipcMain.handle('rep:descargar-catalogo-pdf', async (event, productos, tipo) => {
   const pathFile = await reports.generarCatalogoPDF(productos, tipo);
   return pathFile;
+});
+
+// --- Inteligencia Artificial (Gemini) ---
+ipcMain.handle('ai:seleccionar-comprobante', async () => {
+  const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
+    title: 'Seleccionar Imagen de Comprobante de Pago',
+    filters: [
+      { name: 'Imágenes', extensions: ['png', 'jpg', 'jpeg', 'webp'] }
+    ],
+    properties: ['openFile']
+  });
+  if (!canceled && filePaths.length > 0) {
+    return { success: true, filePath: filePaths[0] };
+  }
+  return { success: false, cancelled: true };
+});
+
+ipcMain.handle('ai:procesar-comprobante', async (event, filePath) => {
+  return await aiService.procesarComprobante(filePath);
+});
+
+ipcMain.handle('ai:seleccionar-catalogo', async () => {
+  const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
+    title: 'Seleccionar Catálogo (Imagen o PDF)',
+    filters: [
+      { name: 'Catálogos', extensions: ['pdf', 'png', 'jpg', 'jpeg', 'webp'] }
+    ],
+    properties: ['openFile']
+  });
+  if (!canceled && filePaths.length > 0) {
+    return { success: true, filePath: filePaths[0] };
+  }
+  return { success: false, cancelled: true };
+});
+
+ipcMain.handle('ai:procesar-catalogo', async (event, filePath) => {
+  return await aiService.procesarCatalogo(filePath);
+});
+
+ipcMain.handle('ai:buscar-imagenes', async (event, productName) => {
+  return await aiService.buscarImagenesGrounding(productName);
+});
+
+ipcMain.handle('ai:descargar-imagen', async (event, url) => {
+  return await aiService.descargarImagenLocal(url);
 });
 
 // --- Sincronización Google Drive ---

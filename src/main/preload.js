@@ -138,6 +138,16 @@ contextBridge.exposeInMainWorld('api', {
     descargarAhora: () => ipcRenderer.invoke('drive:descargar-ahora')
   },
 
+  // Inteligencia Artificial (Gemini)
+  ai: {
+    seleccionarComprobante: () => ipcRenderer.invoke('ai:seleccionar-comprobante'),
+    procesarComprobante: (filePath) => ipcRenderer.invoke('ai:procesar-comprobante', filePath),
+    seleccionarCatalogo: () => ipcRenderer.invoke('ai:seleccionar-catalogo'),
+    procesarCatalogo: (filePath) => ipcRenderer.invoke('ai:procesar-catalogo', filePath),
+    buscarImagenes: (productName) => ipcRenderer.invoke('ai:buscar-imagenes', productName),
+    descargarImagen: (url) => ipcRenderer.invoke('ai:descargar-imagen', url)
+  },
+
   // Relaunch y Foco de aplicación
   app: {
     relaunch: () => ipcRenderer.invoke('app:relaunch'),

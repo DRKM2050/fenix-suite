@@ -24,6 +24,7 @@
   "author": "Fénix Admin S.A.",
   "license": "ISC",
   "dependencies": {
+    "@google/genai": "^2.12.0",
     "electron-updater": "^6.1.4",
     "googleapis": "^129.0.0",
     "sqlite3": "^5.1.7"
