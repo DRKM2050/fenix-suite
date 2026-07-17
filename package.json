@@ -12,6 +12,7 @@
     "postinstall": "electron-builder install-app-deps",
     "dev-mac": "npm run rebuild && npm start",
     "build-all": "npm run tailwind-build && npm run build-win",
+    "release-win": "npm run tailwind-build && electron-builder --win --x64 --publish always",
     "git-release": "git add . && git commit -m \"Actualizacion y mejoras de estabilidad\" && git push"
   },
   "keywords": [
