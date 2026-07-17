@@ -597,31 +597,67 @@ async function generarDatosPrueba() {
   await dbRun("INSERT OR REPLACE INTO opciones (clave_ajuste, valor_ajuste) VALUES ('cuenta_principal_id', ?)", [idMiCta2.toString()]);
   await dbRun("INSERT OR REPLACE INTO opciones (clave_ajuste, valor_ajuste) VALUES ('cuenta_gastos_personales_id', ?)", [idMiCta3.toString()]);
 
-  // 3.1 Crear productos E-commerce con precio de venta y ofertas
+  // 3.1 Crear productos E-commerce con precio de venta, ofertas e imágenes basadas en la lista
   const prod1 = await dbRun(`
     INSERT INTO ecommerce_productos (nombre, sku, stock, moneda_costo, monto_costo, cambio_costo, observaciones, timestamp, precio_venta, imagen, es_oferta)
-    VALUES ('[TEST] PlayStation 5 Slim', 'PS5-SLIM-TEST', 8, 'USD', 450.0, 1.0, 'Inventario de prueba [TEST]', ?, 550.0, NULL, 0)
+    VALUES ('[TEST] iMac Pro Retina 5K', 'IMAC-PRO-TEST', 2, 'USD', 2500.0, 1.0, 'iMac Pro para pruebas locales [TEST]', ?, 2999.0, 'imac-pro.png', 1)
   `, [t.toISOString()]);
 
   const prod2 = await dbRun(`
     INSERT INTO ecommerce_productos (nombre, sku, stock, moneda_costo, monto_costo, cambio_costo, observaciones, timestamp, precio_venta, imagen, es_oferta)
-    VALUES ('[TEST] iPhone 15 Pro Max', 'IPHONE-15-TEST', 5, 'USD', 1100.0, 1.0, 'Dispositivos gama alta [TEST]', ?, 1350.0, NULL, 1)
+    VALUES ('[TEST] iPhone 15 Pro Max', 'IPHONE-15-PRO-TEST', 5, 'USD', 1100.0, 1.0, 'iPhone 15 Pro Max de prueba [TEST]', ?, 1399.0, 'IPhone_15_Pro.jpeg', 1)
   `, [t.toISOString()]);
 
   const prod3 = await dbRun(`
     INSERT INTO ecommerce_productos (nombre, sku, stock, moneda_costo, monto_costo, cambio_costo, observaciones, timestamp, precio_venta, imagen, es_oferta)
-    VALUES ('[TEST] Xbox Series X', 'XBOX-SX-TEST', 4, 'USD', 420.0, 1.0, 'Consola Microsoft de prueba [TEST]', ?, 500.0, NULL, 0)
+    VALUES ('[TEST] iPhone SE 2022', 'IPHONE-SE-TEST', 8, 'USD', 350.0, 1.0, 'iPhone estándar de prueba [TEST]', ?, 449.0, 'iphone.png', 0)
   `, [t.toISOString()]);
 
   const prod4 = await dbRun(`
     INSERT INTO ecommerce_productos (nombre, sku, stock, moneda_costo, monto_costo, cambio_costo, observaciones, timestamp, precio_venta, imagen, es_oferta)
-    VALUES ('[TEST] Nintendo Switch OLED', 'NSW-OLED-TEST', 10, 'USD', 280.0, 1.0, 'Consola portátil de prueba [TEST]', ?, 350.0, NULL, 1)
+    VALUES ('[TEST] Logitech MX Master 3S', 'LOGITECH-MX-TEST', 15, 'USD', 75.0, 1.0, 'Mouse premium de prueba [TEST]', ?, 99.0, 'logitech-mx.png', 1)
+  `, [t.toISOString()]);
+
+  const prod5 = await dbRun(`
+    INSERT INTO ecommerce_productos (nombre, sku, stock, moneda_costo, monto_costo, cambio_costo, observaciones, timestamp, precio_venta, imagen, es_oferta)
+    VALUES ('[TEST] Apple Magic Mouse 2', 'MAGIC-MOUSE-TEST', 10, 'USD', 60.0, 1.0, 'Mouse Apple de prueba [TEST]', ?, 79.0, 'magic-mouse.png', 0)
+  `, [t.toISOString()]);
+
+  const prod6 = await dbRun(`
+    INSERT INTO ecommerce_productos (nombre, sku, stock, moneda_costo, monto_costo, cambio_costo, observaciones, timestamp, precio_venta, imagen, es_oferta)
+    VALUES ('[TEST] Xiaomi Mi TV P1 55', 'MI-TV-TEST', 4, 'USD', 380.0, 1.0, 'Smart TV Xiaomi de prueba [TEST]', ?, 499.0, 'mi-tv.png', 0)
+  `, [t.toISOString()]);
+
+  const prod7 = await dbRun(`
+    INSERT INTO ecommerce_productos (nombre, sku, stock, moneda_costo, monto_costo, cambio_costo, observaciones, timestamp, precio_venta, imagen, es_oferta)
+    VALUES ('[TEST] Nike Air Jordan 1 Low', 'NIKE-JORDAN-TEST', 7, 'USD', 95.0, 1.0, 'Calzado deportivo de prueba [TEST]', ?, 129.0, 'nikejordan.png', 1)
+  `, [t.toISOString()]);
+
+  const prod8 = await dbRun(`
+    INSERT INTO ecommerce_productos (nombre, sku, stock, moneda_costo, monto_costo, cambio_costo, observaciones, timestamp, precio_venta, imagen, es_oferta)
+    VALUES ('[TEST] Samsung Galaxy Note 10 Lite', 'SAMSUNG-NOTE10-TEST', 3, 'USD', 300.0, 1.0, 'Smartphone Samsung de prueba [TEST]', ?, 389.0, 'note10.png', 0)
+  `, [t.toISOString()]);
+
+  const prod9 = await dbRun(`
+    INSERT INTO ecommerce_productos (nombre, sku, stock, moneda_costo, monto_costo, cambio_costo, observaciones, timestamp, precio_venta, imagen, es_oferta)
+    VALUES ('[TEST] OnePlus LG Nord N20', 'ONEPLUS-LG-TEST', 6, 'USD', 220.0, 1.0, 'Teléfono OnePlus LG de prueba [TEST]', ?, 289.0, 'oneplus-lg.png', 0)
+  `, [t.toISOString()]);
+
+  const prod10 = await dbRun(`
+    INSERT INTO ecommerce_productos (nombre, sku, stock, moneda_costo, monto_costo, cambio_costo, observaciones, timestamp, precio_venta, imagen, es_oferta)
+    VALUES ('[TEST] OnePlus 11 5G', 'ONEPLUS-11-TEST', 5, 'USD', 580.0, 1.0, 'OnePlus 11 de prueba [TEST]', ?, 699.0, 'oneplus.png', 1)
   `, [t.toISOString()]);
 
   const idProd1 = prod1.lastID;
   const idProd2 = prod2.lastID;
   const idProd3 = prod3.lastID;
   const idProd4 = prod4.lastID;
+  const idProd5 = prod5.lastID;
+  const idProd6 = prod6.lastID;
+  const idProd7 = prod7.lastID;
+  const idProd8 = prod8.lastID;
+  const idProd9 = prod9.lastID;
+  const idProd10 = prod10.lastID;
 
   // 4. Crear tasas de cambio para los últimos 7 días
   const fechaHoy = new Date();
