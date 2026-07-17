@@ -3380,7 +3380,17 @@ function dibujarGraficoFinanciero(movimientos) {
 // ==========================================
 // AUTO ACTUALIZADOR DE SOFTWARE
 // ==========================================
-function configurarActualizaciones() {
+async function configurarActualizaciones() {
+  const lblVersion = document.getElementById('lblAppVersion');
+  if (lblVersion) {
+    try {
+      const version = await window.api.updater.getVersion();
+      lblVersion.textContent = `Versión ${version}`;
+    } catch (err) {
+      console.error('Error al obtener la versión de la app:', err);
+    }
+  }
+
   const btn = document.getElementById('btnCheckUpdate');
   if (!btn) return;
 
