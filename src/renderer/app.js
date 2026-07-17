@@ -130,6 +130,22 @@ async function arrancarAplicacion() {
 // ==========================================
 // SECCIÓN NAVEGACIÓN SPA
 // ==========================================
+function limpiarFormularioMovimiento() {
+  state.editandoMovimientoId = null;
+  const form = document.getElementById('formMovimiento');
+  if (form) {
+    form.reset();
+  }
+  const seccionEco = document.getElementById('seccionEcommerce');
+  if (seccionEco) seccionEco.classList.add('hidden');
+  const btnCancelar = document.getElementById('btnCancelarMovimiento');
+  if (btnCancelar) btnCancelar.classList.add('hidden');
+  
+  // Limpiar el selector de cuenta también
+  const selectCta = document.getElementById('movCuenta');
+  if (selectCta) selectCta.innerHTML = '<option value="">Seleccione...</option>';
+}
+
 function configurarNavegacion() {
   const links = document.querySelectorAll('.nav-link');
   const sections = document.querySelectorAll('.view-section');
@@ -138,6 +154,11 @@ function configurarNavegacion() {
     link.addEventListener('click', async (e) => {
       e.preventDefault();
       const targetId = link.getAttribute('data-target');
+
+      // Limpiar el formulario de movimientos al salir
+      if (targetId !== 'view-movimientos') {
+        limpiarFormularioMovimiento();
+      }
 
       // Limpiar la selección de cuentas al salir de clientes
       if (targetId !== 'view-clientes') {
@@ -217,19 +238,44 @@ function copiarAlPortapapeles(texto) {
 // CONFIGURACIÓN DE FORMATO DECIMAL / MILES
 // ==========================================
 function formatearNumeroVisual(numero) {
-  if (numero === undefined || numero === null || isNaN(numero)) return '0,00';
-  let str = Number(numero).toFixed(4); // Máximo 4 decimales
+  return formatearNumeroMoneda(numero, state.opciones.moneda_principal || 'USDT');
+}
+
+function formatearNumeroMoneda(numero, moneda) {
+  if (numero === undefined || numero === null || isNaN(numero)) {
+    return moneda === 'PYG' ? '0' : '0,00';
+  }
   
-  // Limpieza de ceros decimales innecesarios
-  if (str.endsWith('.0000') || str.endsWith(',0000')) {
-    str = Number(numero).toFixed(2);
-  } else if (str.includes('.')) {
-    // Si tiene decimales, quitamos los ceros a la derecha innecesarios
+  let numDecimals = 2; // por defecto
+  if (moneda === 'PYG') {
+    numDecimals = 0;
+  } else if (moneda === 'BTC' || moneda === 'ETH') {
+    numDecimals = 6;
+  }
+  
+  let str = Number(numero).toFixed(numDecimals);
+  
+  // Si es crypto, recortar ceros redundantes a la derecha para no tener un valor largo si no es necesario
+  if (numDecimals > 2 && str.includes('.')) {
     while (str.endsWith('0') && str.split('.')[1].length > 2) {
       str = str.substring(0, str.length - 1);
     }
   }
   
+  let parts = str.split('.');
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.'); // Punto para miles
+  return parts.join(','); // Coma para decimales
+}
+
+function formatearCotizacion(numero) {
+  if (numero === undefined || numero === null || isNaN(numero)) return '0,00';
+  let str = Number(numero).toFixed(6);
+  if (str.includes('.')) {
+    // Quitar ceros redundantes a la derecha, manteniendo al menos 2 decimales
+    while (str.endsWith('0') && str.split('.')[1].length > 2) {
+      str = str.substring(0, str.length - 1);
+    }
+  }
   let parts = str.split('.');
   parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.'); // Punto para miles
   return parts.join(','); // Coma para decimales
@@ -360,12 +406,15 @@ async function cargarListasBase() {
   // Rellenar tipo de transacción
   const selectMovTipo = document.getElementById('movTipo');
   const selectFiltroTipo = document.getElementById('filtroTipo');
-  selectMovTipo.innerHTML = '';
-  selectFiltroTipo.innerHTML = '<option value="">Todos los Tipos</option>';
+  const selectHistTipo = document.getElementById('histTipo');
+  selectMovTipo.innerHTML = '<option value="">Seleccione...</option>';
+  selectFiltroTipo.innerHTML = '<option value="">Seleccione...</option>';
+  if (selectHistTipo) selectHistTipo.innerHTML = '<option value="">Seleccione...</option>';
 
   state.tiposTransaccion.forEach(t => {
     selectMovTipo.insertAdjacentHTML('beforeend', `<option value="${t.nombre}">${t.nombre}</option>`);
     selectFiltroTipo.insertAdjacentHTML('beforeend', `<option value="${t.nombre}">${t.nombre}</option>`);
+    if (selectHistTipo) selectHistTipo.insertAdjacentHTML('beforeend', `<option value="${t.nombre}">${t.nombre}</option>`);
   });
 
   // Rellenar monedas (Sigla limpia únicamente)
@@ -377,13 +426,13 @@ async function cargarListasBase() {
   const selectNewCtaMoneda = document.getElementById('movNewCtaMoneda');
   const selectEcoProdMoneda = document.getElementById('ecoProductoMonedaCosto');
   
-  selectMovMoneda.innerHTML = '';
-  selectEcoMoneda.innerHTML = '';
-  selectCtaMoneda.innerHTML = '';
-  selectGastoMoneda.innerHTML = '';
-  selectMiCuentaMoneda.innerHTML = '';
-  selectNewCtaMoneda.innerHTML = '';
-  if (selectEcoProdMoneda) selectEcoProdMoneda.innerHTML = '';
+  selectMovMoneda.innerHTML = '<option value="">Seleccione...</option>';
+  selectEcoMoneda.innerHTML = '<option value="">Seleccione...</option>';
+  selectCtaMoneda.innerHTML = '<option value="">Seleccione...</option>';
+  selectGastoMoneda.innerHTML = '<option value="">Seleccione...</option>';
+  selectMiCuentaMoneda.innerHTML = '<option value="">Seleccione...</option>';
+  selectNewCtaMoneda.innerHTML = '<option value="">Seleccione...</option>';
+  if (selectEcoProdMoneda) selectEcoProdMoneda.innerHTML = '<option value="">Seleccione...</option>';
 
   state.monedas.filter(m => m.status === 'ACTIVO').forEach(m => {
     const optionHTML = `<option value="${m.siglas}">${m.siglas}</option>`;
@@ -398,7 +447,7 @@ async function cargarListasBase() {
 
   // Rellenar par de divisas en Tasas de Cambio
   const selectCambioPar = document.getElementById('cambioPar');
-  selectCambioPar.innerHTML = '';
+  selectCambioPar.innerHTML = '<option value="">Seleccione...</option>';
   state.relaciones.forEach(r => {
     const value = `${r.moneda_origen}/${r.moneda_destino}`;
     selectCambioPar.insertAdjacentHTML('beforeend', `<option value="${value}">${value}</option>`);
@@ -409,10 +458,19 @@ async function cargarListasBase() {
 
   // Rellenar selects de mis cuentas
   const selectGastoMiCta = document.getElementById('gastoMiCuenta');
-  selectGastoMiCta.innerHTML = '';
+  selectGastoMiCta.innerHTML = '<option value="">Seleccione...</option>';
   state.misCuentas.filter(c => c.status === 'ACTIVO').forEach(c => {
-    selectGastoMiCta.insertAdjacentHTML('beforeend', `<option value="${c.id_mi_cuenta}">${c.nombre_cuenta} (${c.moneda})</option>`);
+    selectGastoMiCta.insertAdjacentHTML('beforeend', `<option value="${c.id_mi_cuenta}" data-moneda="${c.moneda}">${c.nombre_cuenta} (${c.moneda})</option>`);
   });
+
+  const gastosMiCtaId = await window.api.opciones.get('cuenta_gastos_personales_id') || null;
+  if (gastosMiCtaId) {
+    selectGastoMiCta.value = gastosMiCtaId;
+    const ctaGastos = state.misCuentas.find(c => c.id_mi_cuenta == gastosMiCtaId);
+    if (ctaGastos) {
+      document.getElementById('gastoMoneda').value = ctaGastos.moneda;
+    }
+  }
 }
 
 // ==========================================
@@ -427,20 +485,18 @@ async function refrescarClientes() {
     const isActivo = cli.status !== 'INACTIVO';
     const badgeClass = isActivo ? 'bg-indigo-900/40 text-indigo-400' : 'bg-slate-800 text-slate-500';
     
-    // Todos los detalles visibles en la tabla (Nombre, RUC, Tipo, Teléfono, Correo, Estado)
     const trHTML = `
-      <tr class="border-b border-slate-900 hover:bg-slate-900/40 cursor-pointer">
-        <td class="p-3 font-semibold text-slate-200" onclick="verFichaCliente(${cli.id_cliente})">${cli.nombre}</td>
-        <td class="p-3 font-mono hover:text-indigo-400 transition" onclick="copiarAlPortapapeles('${cli.documento}')" title="Haga clic para copiar">${cli.documento} 📋</td>
-        <td class="p-3 text-slate-400" onclick="verFichaCliente(${cli.id_cliente})">${cli.tipo_cliente || 'OCASIONAL'}</td>
-        <td class="p-3 text-slate-400" onclick="verFichaCliente(${cli.id_cliente})">${cli.telefono || '--'}</td>
-        <td class="p-3 text-slate-400" onclick="verFichaCliente(${cli.id_cliente})">${cli.mail || '--'}</td>
-        <td class="p-3" onclick="verFichaCliente(${cli.id_cliente})">
+      <tr class="border-b border-slate-900 hover:bg-slate-900/40 cursor-pointer" onclick="seleccionarClienteFila(${cli.id_cliente}, '${cli.nombre.replace(/'/g, "\\'")}')">
+        <td class="p-3 font-semibold text-slate-200 hover:text-indigo-400 transition" onclick="event.stopPropagation(); abrirOpcionesCliente(${cli.id_cliente}, '${cli.nombre.replace(/'/g, "\\'")}')">${cli.nombre}</td>
+        <td class="p-3 font-mono hover:text-indigo-400 cursor-pointer hover:underline transition" onclick="event.stopPropagation(); copiarAlPortapapeles('${cli.documento}')" title="Haga clic para copiar">${cli.documento}</td>
+        <td class="p-3 text-slate-400">${cli.tipo_cliente || 'OCASIONAL'}</td>
+        <td class="p-3 text-slate-400">${cli.telefono || '--'}</td>
+        <td class="p-3 text-slate-400">${cli.mail || '--'}</td>
+        <td class="p-3">
           <span class="px-2 py-0.5 rounded text-[10px] font-bold ${badgeClass}">${cli.status || 'ACTIVO'}</span>
         </td>
-        <td class="p-3 text-center flex justify-center gap-2">
-          <button onclick="seleccionarClienteParaCuentas(${cli.id_cliente}, '${cli.nombre}')" class="text-emerald-450 hover:text-emerald-300 font-semibold">Cuentas</button>
-          <button onclick="verHistorialCliente(${cli.id_cliente}, '${cli.nombre}')" class="text-sky-400 hover:text-sky-300 font-semibold">Historial</button>
+        <td class="p-3 text-center flex justify-center gap-2" onclick="event.stopPropagation();">
+          <button onclick="verHistorialCliente(${cli.id_cliente}, '${cli.nombre.replace(/'/g, "\\'")}')" class="text-sky-400 hover:text-sky-300 font-semibold">Historial</button>
           <button onclick="editarCliente(${cli.id_cliente})" class="text-indigo-400 hover:text-indigo-300 font-semibold">Editar</button>
           <button onclick="eliminarCliente(${cli.id_cliente})" class="text-rose-500 hover:text-rose-455 font-semibold">Borrar</button>
         </td>
@@ -449,6 +505,87 @@ async function refrescarClientes() {
     tabla.insertAdjacentHTML('beforeend', trHTML);
   });
 }
+
+// Cargar cliente tanto en su formulario de edición como en sus cuentas
+async function seleccionarClienteFila(idCliente, nombreCliente) {
+  const cliente = state.clientes.find(c => c.id_cliente === idCliente);
+  if (!cliente) return;
+
+  document.getElementById('clienteId').value = cliente.id_cliente;
+  document.getElementById('clienteNombre').value = cliente.nombre;
+  document.getElementById('clienteDocumento').value = cliente.documento;
+  document.getElementById('clienteTipo').value = cliente.tipo_cliente;
+  document.getElementById('clienteTelefono').value = cliente.telefono;
+  document.getElementById('clienteMail').value = cliente.mail;
+  document.getElementById('clienteStatus').value = cliente.status || 'ACTIVO';
+  document.getElementById('clienteObservaciones').value = cliente.observaciones;
+
+  // Cargar cuentas
+  state.clienteActivoParaCuentas = idCliente;
+  document.getElementById('cuentaClienteActivo').textContent = nombreCliente;
+  document.getElementById('formCuenta').classList.remove('hidden');
+  document.getElementById('cuentaId').value = '';
+  document.getElementById('btnCancelarCuenta').classList.add('hidden');
+  await refrescarCuentas(idCliente);
+}
+window.seleccionarClienteFila = seleccionarClienteFila;
+
+// Modales de interacción
+function abrirOpcionesCliente(idCliente, nombreCliente) {
+  const modal = document.getElementById('clientOptionsModal');
+  document.getElementById('clientOptionsTitle').textContent = `Opciones de ${nombreCliente}`;
+  
+  const btnVerFicha = document.getElementById('btnOptVerFicha');
+  btnVerFicha.onclick = () => {
+    modal.classList.add('hidden');
+    verFichaCliente(idCliente);
+  };
+  
+  const btnNuevaTransaccion = document.getElementById('btnOptNuevaTransaccion');
+  btnNuevaTransaccion.onclick = () => {
+    modal.classList.add('hidden');
+    document.querySelector('.nav-link[data-target="view-movimientos"]').click();
+    setTimeout(() => {
+      const selectMovCli = document.getElementById('movCliente');
+      if (selectMovCli) {
+        selectMovCli.value = idCliente;
+        selectMovCli.dispatchEvent(new Event('change'));
+      }
+    }, 150);
+  };
+  
+  modal.classList.remove('hidden');
+}
+window.abrirOpcionesCliente = abrirOpcionesCliente;
+
+function abrirOpcionesCuenta(idCuenta, nombreCuenta, idCliente, nombreCliente) {
+  const modal = document.getElementById('accountOptionsModal');
+  document.getElementById('accountOptionsTitle').textContent = `Opciones de Cuenta: ${nombreCuenta}`;
+  
+  const btnOptCtaNuevaTransaccion = document.getElementById('btnOptCtaNuevaTransaccion');
+  btnOptCtaNuevaTransaccion.onclick = () => {
+    modal.classList.add('hidden');
+    document.querySelector('.nav-link[data-target="view-movimientos"]').click();
+    setTimeout(async () => {
+      const selectMovCli = document.getElementById('movCliente');
+      if (selectMovCli) {
+        selectMovCli.value = idCliente;
+        await selectMovCli.dispatchEvent(new Event('change'));
+        
+        setTimeout(() => {
+          const selectMovCta = document.getElementById('movCuenta');
+          if (selectMovCta) {
+            selectMovCta.value = idCuenta;
+            selectMovCta.dispatchEvent(new Event('change'));
+          }
+        }, 200);
+      }
+    }, 150);
+  };
+  
+  modal.classList.remove('hidden');
+}
+window.abrirOpcionesCuenta = abrirOpcionesCuenta;
 
 // Ficha detallada del cliente en modal
 async function verFichaCliente(idCliente) {
@@ -509,16 +646,17 @@ async function refrescarCuentas(idCliente) {
     const isActivo = cta.status !== 'INACTIVO';
     const badgeClass = isActivo ? 'bg-emerald-950 text-emerald-400 border border-emerald-900' : 'bg-slate-900 text-slate-500 border border-slate-800';
     const refText = cta.referencia || '--';
+    const clientName = state.clientes.find(c => c.id_cliente === idCliente)?.nombre || '';
     const tr = `
-      <tr class="border-b border-slate-900 hover:bg-slate-900/40">
+      <tr class="border-b border-slate-900 hover:bg-slate-900/40 cursor-pointer" onclick="cargarEditarCuenta(${cta.id_cuenta})">
         <td class="p-3 font-semibold text-slate-200">
-          <div>${cta.nombre_cuenta}</div>
+          <div class="hover:text-indigo-400 transition" onclick="event.stopPropagation(); abrirOpcionesCuenta(${cta.id_cuenta}, '${cta.nombre_cuenta.replace(/'/g, "\\'")}', ${idCliente}, '${clientName.replace(/'/g, "\\'")}')">${cta.nombre_cuenta}</div>
           <div class="text-[9px] text-slate-500">${cta.tipo_cuenta}</div>
         </td>
         <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] bg-slate-800 text-slate-350 font-bold">${cta.moneda}</span></td>
-        <td class="p-3 font-mono cursor-pointer hover:text-indigo-400 transition" onclick="copiarAlPortapapeles('${refText}')" title="Haga clic para copiar">${refText} 📋</td>
+        <td class="p-3 font-mono hover:text-indigo-400 cursor-pointer hover:underline transition" onclick="event.stopPropagation(); copiarAlPortapapeles('${refText}')" title="Haga clic para copiar">${refText}</td>
         <td class="p-3"><span class="px-1.5 py-0.5 rounded text-[9px] font-bold ${badgeClass}">${cta.status || 'ACTIVO'}</span></td>
-        <td class="p-3 text-center flex justify-center gap-2">
+        <td class="p-3 text-center flex justify-center gap-2" onclick="event.stopPropagation();">
           <button onclick="cargarEditarCuenta(${cta.id_cuenta})" class="text-indigo-400 hover:text-indigo-300 font-semibold text-xs">Editar</button>
           <button onclick="eliminarCuenta(${cta.id_cuenta})" class="text-rose-500 hover:text-rose-455 font-semibold text-xs">Eliminar</button>
         </td>
@@ -622,7 +760,7 @@ async function cargarHistorialCliente() {
             'bg-slate-800 text-slate-400'
           }">${m.tipo_transaccion}</span>
         </td>
-        <td class="p-3 text-right font-bold text-slate-100">${formatearNumeroVisual(m.monto)} ${m.moneda}</td>
+        <td class="p-3 text-right font-bold text-slate-100 whitespace-nowrap truncate max-w-[130px]" title="${formatearNumeroMoneda(m.monto, m.moneda)} ${m.moneda}">${formatearNumeroMoneda(m.monto, m.moneda)} ${m.moneda}</td>
         <td class="p-3">${m.concepto}</td>
       </tr>
     `;
@@ -634,29 +772,71 @@ async function cargarHistorialCliente() {
 }
 
 // ==========================================
-// TASAS DE CAMBIO
+// TASAS DE COTIZACIÓN
 // ==========================================
 async function refrescarCambios() {
   state.cambios = await window.api.cambios.listar();
+  
+  // 1. Renderizar la tabla de historial
   const tabla = document.getElementById('tablaCambios');
-  tabla.innerHTML = '';
+  if (tabla) {
+    tabla.innerHTML = '';
+    state.cambios.forEach(cam => {
+      const tr = `
+        <tr class="border-b border-slate-900 hover:bg-slate-900/20">
+          <td class="p-3">${formatearFecha(cam.fecha_contable)}</td>
+          <td class="p-3 font-bold text-indigo-400">${cam.par_divisa}</td>
+          <td class="p-3 text-right text-emerald-455 font-semibold font-mono">${formatearCotizacion(cam.valor_compra)}</td>
+          <td class="p-3 text-right text-rose-500 font-semibold font-mono">${formatearCotizacion(cam.valor_venta)}</td>
+          <td class="p-3 text-slate-500 text-[10px]">${new Date(cam.timestamp).toLocaleString()}</td>
+          <td class="p-3 text-center">
+            <button onclick="cargarEditarCambio(${cam.id_cambio}, '${cam.par_divisa}', ${cam.valor_compra}, ${cam.valor_venta})" class="text-indigo-400 hover:text-indigo-300 text-[10px] mr-2">Editar</button>
+            <button onclick="eliminarCambio(${cam.id_cambio})" class="text-rose-500 hover:text-rose-455 text-[10px]">Borrar</button>
+          </td>
+        </tr>
+      `;
+      tabla.insertAdjacentHTML('beforeend', tr);
+    });
+  }
 
-  state.cambios.forEach(cam => {
-    const tr = `
-      <tr class="border-b border-slate-900 hover:bg-slate-900/20">
-        <td class="p-3">${formatearFecha(cam.fecha_contable)}</td>
-        <td class="p-3 font-bold text-indigo-400">${cam.par_divisa}</td>
-        <td class="p-3 text-right text-emerald-450 font-semibold">${formatearNumeroVisual(cam.valor_compra)}</td>
-        <td class="p-3 text-right text-rose-500 font-semibold">${formatearNumeroVisual(cam.valor_venta)}</td>
-        <td class="p-3 text-slate-500 text-[10px]">${new Date(cam.timestamp).toLocaleString()}</td>
-        <td class="p-3 text-center">
-          <button onclick="cargarEditarCambio(${cam.id_cambio}, '${cam.par_divisa}', ${cam.valor_compra}, ${cam.valor_venta})" class="text-indigo-400 hover:text-indigo-300 text-[10px] mr-2">Editar</button>
-          <button onclick="eliminarCambio(${cam.id_cambio})" class="text-rose-500 hover:text-rose-455 text-[10px]">Borrar</button>
-        </td>
-      </tr>
-    `;
-    tabla.insertAdjacentHTML('beforeend', tr);
-  });
+  // 2. Renderizar la grilla de cotizaciones activas (el último valor por par de divisas)
+  const gridCot = document.getElementById('gridCotizacionesActivas');
+  if (gridCot) {
+    gridCot.innerHTML = '';
+    
+    const cotizacionesActivas = {};
+    const cambiosOrdenados = [...state.cambios].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    cambiosOrdenados.forEach(cam => {
+      if (!cotizacionesActivas[cam.par_divisa]) {
+        cotizacionesActivas[cam.par_divisa] = cam;
+      }
+    });
+
+    const paresRegistrados = Object.values(cotizacionesActivas);
+    if (paresRegistrados.length === 0) {
+      gridCot.innerHTML = `<div class="p-3 text-center text-xs text-slate-500 bg-slate-900/40 rounded-xl">Sin cotizaciones cargadas para el día de hoy.</div>`;
+    } else {
+      paresRegistrados.forEach(c => {
+        const fechaStr = new Date(c.timestamp).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+        gridCot.insertAdjacentHTML('beforeend', `
+          <div class="p-3.5 bg-slate-900/60 border border-slate-800/80 rounded-xl flex justify-between items-center hover:bg-slate-900/90 transition shadow-inner">
+            <div>
+              <span class="text-[9px] text-slate-400 font-bold block uppercase tracking-wider">${c.par_divisa}</span>
+              <div class="flex items-baseline gap-2 mt-1">
+                <span class="text-[9px] text-emerald-450 font-semibold">C:</span>
+                <span class="text-base font-black text-emerald-400 font-mono">${formatearCotizacion(c.valor_compra)}</span>
+                <span class="text-[9px] text-rose-500 font-semibold ml-1">V:</span>
+                <span class="text-base font-black text-rose-455 font-mono">${formatearCotizacion(c.valor_venta)}</span>
+              </div>
+            </div>
+            <div class="text-right">
+              <span class="text-[8px] text-slate-500 italic block mt-0.5">${fechaStr}</span>
+            </div>
+          </div>
+        `);
+      });
+    }
+  }
 }
 
 function cargarEditarCambio(id, par, compra, venta) {
@@ -739,9 +919,9 @@ async function refrescarMovimientos(filtros = {}) {
             esIngreso ? 'bg-emerald-950 text-emerald-400 border border-emerald-900' : 'bg-rose-955 text-rose-455 border border-rose-900'
           }">${m.tipo_transaccion}</span>
         </td>
-        <td class="p-3 text-right">
-          <div class="font-bold ${esIngreso ? 'text-emerald-450' : 'text-rose-500'}">${esIngreso ? '+' : '-'}${formatearNumeroVisual(m.monto)} ${m.moneda}</div>
-          <div class="text-[9px] text-slate-500">Tasa: ${formatearNumeroVisual(m.valor_cambio)}</div>
+        <td class="p-3 text-right whitespace-nowrap truncate max-w-[150px]" title="${esIngreso ? '+' : '-'}${formatearNumeroMoneda(m.monto, m.moneda)} ${m.moneda}">
+          <div class="font-bold ${esIngreso ? 'text-emerald-450' : 'text-rose-500'}">${esIngreso ? '+' : '-'}${formatearNumeroMoneda(m.monto, m.moneda)} ${m.moneda}</div>
+          <div class="text-[9px] text-slate-500" title="Tasa: ${formatearCotizacion(m.valor_cambio)}">Tasa: ${formatearCotizacion(m.valor_cambio)}</div>
         </td>
         <td class="p-3">
           <div class="font-medium text-slate-300">${m.concepto}</div>
@@ -1495,20 +1675,53 @@ function configurarFormularios() {
 
   selectCli.addEventListener('change', async () => {
     const idCliente = selectCli.value;
-    selectCta.innerHTML = '<option value="">-- Seleccione Cuenta --</option>';
+    selectCta.innerHTML = '<option value="">Seleccione...</option>';
     
     if (idCliente) {
       const cuentas = await window.api.cuentas.listar(idCliente);
-      cuentas.filter(c => c.status === 'ACTIVO').forEach(c => {
+      const cuentasActivas = cuentas.filter(c => c.status === 'ACTIVO');
+      
+      cuentasActivas.forEach(c => {
         selectCta.insertAdjacentHTML('beforeend', `<option value="${c.id_cuenta}" data-moneda="${c.moneda}">${c.nombre_cuenta} (${c.moneda})</option>`);
       });
+
+      // Sugerir la cuenta más utilizada
+      if (cuentasActivas.length > 0) {
+        const idClienteInt = parseInt(idCliente);
+        const freqs = {};
+        state.movimientos.forEach(m => {
+          if (m.id_cliente === idClienteInt && m.id_cuenta) {
+            freqs[m.id_cuenta] = (freqs[m.id_cuenta] || 0) + 1;
+          }
+        });
+        
+        let maxFreq = -1;
+        let bestCtaId = cuentasActivas[0].id_cuenta;
+        cuentasActivas.forEach(c => {
+          const f = freqs[c.id_cuenta] || 0;
+          if (f > maxFreq) {
+            maxFreq = f;
+            bestCtaId = c.id_cuenta;
+          }
+        });
+        
+        selectCta.value = bestCtaId;
+        selectCta.dispatchEvent(new Event('change'));
+      }
     } else {
-      // Si no hay cliente, podemos cargar las cuentas propias de la empresa (Mis Cuentas)
+      // Si no hay cliente, cargamos las cuentas propias de la empresa (Mis Cuentas)
       state.misCuentas.filter(c => c.status === 'ACTIVO').forEach(c => {
         selectCta.insertAdjacentHTML('beforeend', `<option value="${c.id_mi_cuenta}" data-moneda="${c.moneda}">${c.nombre_cuenta} (${c.moneda})</option>`);
       });
     }
   });
+
+  const btnLimpiarMov = document.getElementById('btnLimpiarMovimiento');
+  if (btnLimpiarMov) {
+    btnLimpiarMov.addEventListener('click', () => {
+      limpiarFormularioMovimiento();
+    });
+  }
 
   selectCta.addEventListener('change', () => {
     const selectedOption = selectCta.options[selectCta.selectedIndex];
@@ -1789,6 +2002,20 @@ function configurarFormularios() {
   });
 
   // --- Formulario Gasto Personal ---
+  const selectGastoMiCta = document.getElementById('gastoMiCuenta');
+  const selectGastoMoneda = document.getElementById('gastoMoneda');
+  if (selectGastoMiCta && selectGastoMoneda) {
+    selectGastoMiCta.addEventListener('change', () => {
+      const selectedOption = selectGastoMiCta.options[selectGastoMiCta.selectedIndex];
+      if (selectedOption) {
+        const moneda = selectedOption.getAttribute('data-moneda');
+        if (moneda) {
+          selectGastoMoneda.value = moneda;
+        }
+      }
+    });
+  }
+
   document.getElementById('formGastoPersonal').addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -2543,9 +2770,49 @@ async function actualizarDashboard() {
   document.getElementById('kpiEcoVenta').textContent = `${formatearNumeroVisual(ecoVenta)} ${state.opciones.moneda_principal}`;
   document.getElementById('kpiEcoItems').textContent = `${ecoItems} Unidades`;
 
-  // Gastos Personales KPIs
-  document.getElementById('dashGastoDia').textContent = `${formatearNumeroVisual(gastoPersonalDia)} ${state.opciones.moneda_principal}`;
-  document.getElementById('dashGastoMes').textContent = `${formatearNumeroVisual(gastoPersonalMes)} ${state.opciones.moneda_principal}`;
+  // Gastos Personales KPIs (Doble Divisa)
+  const ctaGastos = state.misCuentas.find(c => c.id_mi_cuenta == gastosMiCtaId);
+  const monedaGastos = ctaGastos ? ctaGastos.moneda : 'PYG';
+
+  let gastoPersonalDiaEquiv = 0.0;
+  let gastoPersonalMesEquiv = 0.0;
+
+  if (monedaGastos === state.opciones.moneda_principal) {
+    gastoPersonalDiaEquiv = gastoPersonalDia;
+    gastoPersonalMesEquiv = gastoPersonalMes;
+  } else {
+    const par1 = `${state.opciones.moneda_principal}/${monedaGastos}`;
+    const par2 = `${monedaGastos}/${state.opciones.moneda_principal}`;
+    const cotizacion = state.cambios.find(c => c.par_divisa === par1 || c.par_divisa === par2);
+    if (cotizacion) {
+      if (cotizacion.par_divisa === par1) {
+        const factor = cotizacion.valor_venta || cotizacion.valor_compra || 1.0;
+        gastoPersonalDiaEquiv = gastoPersonalDia * factor;
+        gastoPersonalMesEquiv = gastoPersonalMes * factor;
+      } else {
+        const factor = cotizacion.valor_compra || cotizacion.valor_venta || 1.0;
+        gastoPersonalDiaEquiv = gastoPersonalDia / factor;
+        gastoPersonalMesEquiv = gastoPersonalMes / factor;
+      }
+    } else {
+      if (monedaGastos === 'PYG') {
+        gastoPersonalDiaEquiv = gastoPersonalDia * 7500;
+        gastoPersonalMesEquiv = gastoPersonalMes * 7500;
+      } else {
+        gastoPersonalDiaEquiv = gastoPersonalDia;
+        gastoPersonalMesEquiv = gastoPersonalMes;
+      }
+    }
+  }
+
+  document.getElementById('dashGastoDia').innerHTML = `
+    <span class="text-sm font-semibold text-rose-400">${formatearNumeroMoneda(gastoPersonalDia, state.opciones.moneda_principal)} ${state.opciones.moneda_principal}</span>
+    ${monedaGastos !== state.opciones.moneda_principal ? `<div class="text-[10px] text-slate-500 italic mt-0.5">~ ${formatearNumeroMoneda(gastoPersonalDiaEquiv, monedaGastos)} ${monedaGastos}</div>` : ''}
+  `;
+  document.getElementById('dashGastoMes').innerHTML = `
+    <span class="text-sm font-semibold text-rose-455">${formatearNumeroMoneda(gastoPersonalMes, state.opciones.moneda_principal)} ${state.opciones.moneda_principal}</span>
+    ${monedaGastos !== state.opciones.moneda_principal ? `<div class="text-[10px] text-slate-500 italic mt-0.5">~ ${formatearNumeroMoneda(gastoPersonalMesEquiv, monedaGastos)} ${monedaGastos}</div>` : ''}
+  `;
 
   // Renderizar la tabla de balances de Mis Cuentas Propias en Dashboard
   const tbodyDashCta = document.getElementById('tablaDashMisCuentas');
@@ -2560,7 +2827,7 @@ async function actualizarDashboard() {
           <td class="p-2.5 font-semibold text-slate-200">${c.nombre}</td>
           <td class="p-2.5 font-bold text-indigo-400">${c.moneda}</td>
           <td class="p-2.5 text-slate-400 font-mono">${c.referencia}</td>
-          <td class="p-2.5 text-right font-bold ${c.saldo >= 0 ? 'text-emerald-450' : 'text-rose-500'}">${formatearNumeroVisual(c.saldo)} ${c.moneda}</td>
+          <td class="p-2.5 text-right font-bold whitespace-nowrap truncate max-w-[130px] ${c.saldo >= 0 ? 'text-emerald-450' : 'text-rose-500'}" title="${formatearNumeroMoneda(c.saldo, c.moneda)} ${c.moneda}">${formatearNumeroMoneda(c.saldo, c.moneda)} ${c.moneda}</td>
         </tr>
       `);
     });

@@ -43,7 +43,9 @@
       overflow: hidden;
     }
 
-    input, textarea, select {
+    input,
+    textarea,
+    select {
       user-select: text !important;
       -webkit-user-select: text !important;
     }
@@ -197,12 +199,7 @@
         <div>
           <label class="block text-[10px] text-slate-500 font-semibold mb-1">Filtrar por Tipo</label>
           <select id="histTipo" class="w-full glass-input rounded px-2 py-1 text-[10px]">
-            <option value="">Todos</option>
-            <option value="COMPRA">COMPRA</option>
-            <option value="VENTA">VENTA</option>
-            <option value="ECOMMERCE / COMPRA">ECOMMERCE / COMPRA</option>
-            <option value="ECOMMERCE / VENTA">ECOMMERCE / VENTA</option>
-            <option value="GASTO">GASTO</option>
+            <option value="">Seleccione...</option>
           </select>
         </div>
         <div class="flex items-end">
@@ -302,6 +299,87 @@
           class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold py-1.5 px-4 rounded-lg transition">Cerrar
           Ficha</button>
       </div>
+  </div>
+
+  <!-- ==========================================
+       MODALS: OPCIONES DE INTERACCIÓN CLIENTE Y CUENTA
+       ========================================== -->
+  <div id="clientOptionsModal"
+    class="fixed inset-0 z-50 hidden flex items-center justify-center bg-slate-950/80 backdrop-blur-md">
+    <div class="glass-panel w-full max-w-sm p-6 rounded-2xl border border-slate-800 space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+        <h3 class="text-sm font-bold text-slate-200" id="clientOptionsTitle">Opciones de Cliente</h3>
+        <button onclick="document.getElementById('clientOptionsModal').classList.add('hidden')"
+          class="text-slate-400 hover:text-slate-200">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="space-y-2.5 pt-2">
+        <button id="btnOptVerFicha"
+          class="w-full text-left bg-slate-900/60 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 p-3 rounded-xl flex items-center gap-3 transition">
+          <div class="p-2 bg-indigo-650/10 text-indigo-400 rounded-lg">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </div>
+          <div>
+            <div class="text-xs font-bold text-slate-200">Ver Ficha de Cliente</div>
+            <div class="text-[9px] text-slate-500">Muestra los datos corporativos detallados y generales.</div>
+          </div>
+        </button>
+
+        <button id="btnOptNuevaTransaccion"
+          class="w-full text-left bg-slate-900/60 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 p-3 rounded-xl flex items-center gap-3 transition">
+          <div class="p-2 bg-emerald-600/10 text-emerald-455 rounded-lg">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div>
+            <div class="text-xs font-bold text-slate-200">Registrar Transacción</div>
+            <div class="text-[9px] text-slate-500">Abre el panel de movimientos pre-seleccionando a este cliente.</div>
+          </div>
+        </button>
+      </div>
+      <div class="flex justify-end pt-2 border-t border-slate-800">
+        <button onclick="document.getElementById('clientOptionsModal').classList.add('hidden')"
+          class="bg-slate-800 hover:bg-slate-700 text-slate-350 text-xs font-semibold py-1.5 px-4 rounded-lg transition">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="accountOptionsModal"
+    class="fixed inset-0 z-50 hidden flex items-center justify-center bg-slate-950/80 backdrop-blur-md">
+    <div class="glass-panel w-full max-w-sm p-6 rounded-2xl border border-slate-800 space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+        <h3 class="text-sm font-bold text-slate-200" id="accountOptionsTitle">Opciones de Cuenta</h3>
+        <button onclick="document.getElementById('accountOptionsModal').classList.add('hidden')"
+          class="text-slate-400 hover:text-slate-200">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="space-y-2.5 pt-2">
+        <button id="btnOptCtaNuevaTransaccion"
+          class="w-full text-left bg-slate-900/60 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 p-3 rounded-xl flex items-center gap-3 transition">
+          <div class="p-2 bg-emerald-600/10 text-emerald-455 rounded-lg">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div>
+            <div class="text-xs font-bold text-slate-200">Registrar Transacción con esta Cuenta</div>
+            <div class="text-[9px] text-slate-500">Abre movimientos pre-seleccionando cliente y esta cuenta bancaria.</div>
+          </div>
+        </button>
+      </div>
+      <div class="flex justify-end pt-2 border-t border-slate-800">
+        <button onclick="document.getElementById('accountOptionsModal').classList.add('hidden')"
+          class="bg-slate-800 hover:bg-slate-700 text-slate-350 text-xs font-semibold py-1.5 px-4 rounded-lg transition">Cancelar</button>
+      </div>
     </div>
   </div>
 
@@ -330,6 +408,7 @@
         <div>
           <label class="block text-[10px] text-slate-400 font-semibold mb-1">Tipo Cuenta</label>
           <select id="miCuentaTipo" class="w-full glass-input rounded-lg px-2.5 py-1.5 text-xs">
+            <option value="">Seleccione...</option>
             <option value="EFECTIVO">EFECTIVO / CAJA</option>
             <option value="BANCO">CUENTA BANCARIA</option>
             <option value="CRIPTO">WALLET / BLOCKCHAIN</option>
@@ -381,16 +460,19 @@
           <input type="text" id="movNewCliNombre" class="w-full glass-input rounded-lg px-2.5 py-1.5 text-xs" required>
         </div>
         <div>
-          <label class="block text-[10px] text-slate-400 font-semibold mb-1">Documento / RUC *</label>
-          <input type="text" id="movNewCliDocumento" class="w-full glass-input rounded-lg px-2.5 py-1.5 text-xs"
-            required>
+          <label class="block text-[10px] text-slate-400 font-semibold mb-1">Documento / RUC</label>
+          <input type="text" id="movNewCliDocumento" class="w-full glass-input rounded-lg px-2.5 py-1.5 text-xs">
         </div>
         <div>
           <label class="block text-[10px] text-slate-400 font-semibold mb-1">Tipo de Cliente</label>
           <select id="movNewCliTipo" class="w-full glass-input rounded-lg px-2.5 py-1.5 text-xs">
+            <option value="">Seleccione...</option>
             <option value="OCASIONAL">OCASIONAL</option>
             <option value="MINORISTA">MINORISTA</option>
             <option value="MAYORISTA">MAYORISTA</option>
+            <option value="PROVEEDOR">PROVEEDOR</option>
+            <option value="SOCIOS">SOCIOS</option>
+            <option value="OTRO">OTRO</option>
           </select>
         </div>
         <div class="flex gap-2 pt-2 border-t border-slate-800">
@@ -527,7 +609,7 @@
             class="w-full glass-input rounded-lg px-3 py-2 text-sm">
         </div>
         <div>
-          <label class="block text-xs text-slate-400 font-semibold mb-1">Moneda Principal de Reportes</label>
+          <label class="block text-xs text-slate-400 font-semibold mb-1">Moneda Principal</label>
           <select id="editEmpresaMoneda"
             class="w-full glass-input rounded-lg px-3 py-2 text-sm bg-slate-900 text-slate-100">
             <!-- Cargado dinámicamente -->
@@ -854,11 +936,11 @@
                 <h3 class="font-bold text-slate-350 text-md mb-4">Métricas Logísticas E-Commerce</h3>
                 <div class="space-y-4">
                   <div class="flex justify-between items-center">
-                    <span class="text-xs text-slate-500 font-medium">Volumen de Compra E-Com</span>
+                    <span class="text-xs text-slate-500 font-medium">Volumen de Compra eComm</span>
                     <span id="kpiEcoCompra" class="text-sm font-semibold text-emerald-400">0.00 USDT</span>
                   </div>
                   <div class="flex justify-between items-center">
-                    <span class="text-xs text-slate-500 font-medium">Volumen de Venta E-Com</span>
+                    <span class="text-xs text-slate-500 font-medium">Volumen de Venta eComm</span>
                     <span id="kpiEcoVenta" class="text-sm font-semibold text-sky-400">0.00 USDT</span>
                   </div>
                   <div class="flex justify-between items-center">
@@ -901,13 +983,17 @@
               <div>
                 <h3 class="font-bold text-slate-350 text-md mb-4">Resumen Gastos Personales</h3>
                 <div class="space-y-4">
-                  <div class="flex justify-between items-center">
-                    <span class="text-xs text-slate-500 font-medium">Gastos del Día</span>
-                    <span id="dashGastoDia" class="text-sm font-semibold text-rose-400">0,00 USDT</span>
+                  <div class="flex justify-between items-start">
+                    <span class="text-xs text-slate-500 font-medium pt-0.5">Gastos del Día</span>
+                    <div id="dashGastoDia" class="text-right">
+                      <span class="text-sm font-semibold text-rose-400">0,00 USDT</span>
+                    </div>
                   </div>
-                  <div class="flex justify-between items-center">
-                    <span class="text-xs text-slate-500 font-medium">Gastos del Mes</span>
-                    <span id="dashGastoMes" class="text-sm font-semibold text-rose-455">0,00 USDT</span>
+                  <div class="flex justify-between items-start">
+                    <span class="text-xs text-slate-500 font-medium pt-0.5">Gastos del Mes</span>
+                    <div id="dashGastoMes" class="text-right">
+                      <span class="text-sm font-semibold text-rose-455">0,00 USDT</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1070,6 +1156,10 @@
                     class="flex-1 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-semibold py-2.5 rounded-xl shadow-lg transition">
                     Guardar Movimiento
                   </button>
+                  <button type="button" id="btnLimpiarMovimiento"
+                    class="bg-slate-800 hover:bg-slate-700 text-slate-350 font-semibold px-4 py-2.5 rounded-xl text-xs transition">
+                    Limpiar
+                  </button>
                   <button type="button" id="btnCancelarMovimiento"
                     class="bg-slate-800 hover:bg-slate-700 text-slate-400 font-semibold px-4 py-2.5 rounded-xl text-sm transition hidden">
                     Cancelar
@@ -1158,27 +1248,38 @@
           </div>
 
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-            <!-- Ingreso de Tasa -->
-            <div class="glass-panel p-6 rounded-2xl space-y-4">
-              <h3 class="font-bold text-slate-350 text-md border-b border-slate-800/60 pb-2">Establecer Cotización</h3>
-              <form id="formCambio" class="space-y-4">
-                <input type="hidden" id="cambioId">
-                <div>
-                  <label class="block text-xs text-slate-400 font-semibold mb-1">Par de Divisa *</label>
-                  <select id="cambioPar" class="w-full glass-input rounded-lg px-3 py-2.5 text-sm" required>
-                    <!-- Dinámico de relaciones -->
-                  </select>
+            <!-- Columna Izquierda: Cotizaciones Activas + Formulario de Registro -->
+            <div class="space-y-6">
+              
+              <!-- Cotizaciones Activas -->
+              <div class="glass-panel p-6 rounded-2xl space-y-4">
+                <h3 class="font-bold text-slate-300 text-xs uppercase tracking-wider border-b border-slate-800/60 pb-2">Monedas y Cotizaciones Activas</h3>
+                <div id="gridCotizacionesActivas" class="grid grid-cols-1 gap-2.5 text-slate-100">
+                  <!-- Dinámico -->
                 </div>
-                <div>
-                  <label class="block text-xs text-slate-400 font-semibold mb-1">Valor de Compra *</label>
-                  <input type="number" step="any" id="cambioCompra" placeholder="0.00"
-                    class="w-full glass-input rounded-lg px-3 py-2.5 text-sm" required>
-                </div>
-                <div>
-                  <label class="block text-xs text-slate-400 font-semibold mb-1">Valor de Venta *</label>
-                  <input type="number" step="any" id="cambioVenta" placeholder="0.00"
-                    class="w-full glass-input rounded-lg px-3 py-2.5 text-sm" required>
-                </div>
+              </div>
+
+              <!-- Ingreso de Tasa -->
+              <div class="glass-panel p-6 rounded-2xl space-y-4">
+                <h3 class="font-bold text-slate-350 text-md border-b border-slate-800/60 pb-2">Establecer Cotización</h3>
+                <form id="formCambio" class="space-y-4">
+                  <input type="hidden" id="cambioId">
+                  <div>
+                    <label class="block text-xs text-slate-400 font-semibold mb-1">Par de Divisa *</label>
+                    <select id="cambioPar" class="w-full glass-input rounded-lg px-3 py-2.5 text-sm" required>
+                      <!-- Dinámico de relaciones -->
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-xs text-slate-400 font-semibold mb-1">Valor de Compra *</label>
+                    <input type="number" step="any" id="cambioCompra" placeholder="0.00"
+                      class="w-full glass-input rounded-lg px-3 py-2.5 text-lg font-bold text-center text-indigo-400 bg-slate-950/60 border border-slate-800" required>
+                  </div>
+                  <div>
+                    <label class="block text-xs text-slate-400 font-semibold mb-1">Valor de Venta *</label>
+                    <input type="number" step="any" id="cambioVenta" placeholder="0.00"
+                      class="w-full glass-input rounded-lg px-3 py-2.5 text-lg font-bold text-center text-indigo-400 bg-slate-950/60 border border-slate-800" required>
+                  </div>
                 <div class="flex gap-2">
                   <button type="submit" id="btnGuardarCambio"
                     class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-xl shadow-lg transition">
@@ -1436,7 +1537,6 @@
                 <div>
                   <label class="block text-[10px] text-slate-400 font-semibold mb-1">Status Cliente</label>
                   <select id="clienteStatus" class="w-full glass-input rounded-lg px-3 py-2 text-xs">
-                    <option value="">Seleccionar</option>
                     <option value="ACTIVO">ACTIVO</option>
                     <option value="INACTIVO">INACTIVO</option>
                   </select>
@@ -1457,26 +1557,6 @@
                   </button>
                 </div>
               </form>
-
-              <!-- Tabla de Clientes -->
-              <div class="overflow-y-auto max-h-80 border border-slate-800/60 rounded-xl">
-                <table class="w-full text-left border-collapse">
-                  <thead>
-                    <tr class="bg-slate-900/60 text-slate-400 text-xs border-b border-slate-800">
-                      <th class="p-3">Nombre</th>
-                      <th class="p-3">Documento (RUC)</th>
-                      <th class="p-3">Tipo</th>
-                      <th class="p-3">Teléfono</th>
-                      <th class="p-3">Correo</th>
-                      <th class="p-3">Estado</th>
-                      <th class="p-3 text-center">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody id="tablaClientes" class="text-xs divide-y divide-slate-800/40 text-slate-350">
-                    <!-- Dinámico -->
-                  </tbody>
-                </table>
-              </div>
             </div>
 
             <!-- PANEL CUENTAS (Cambiado término de subcuenta a cuentas) -->
@@ -1522,7 +1602,6 @@
                 <div>
                   <label class="block text-[10px] text-slate-400 font-semibold mb-1">Estado de Cuenta</label>
                   <select id="cuentaStatus" class="w-full glass-input rounded-lg px-3 py-2 text-xs">
-                    <option value="">Seleccionar</option>
                     <option value="ACTIVO">ACTIVO</option>
                     <option value="INACTIVO">INACTIVO</option>
                   </select>
@@ -1559,8 +1638,30 @@
                   </tbody>
                 </table>
               </div>
-            </div>
+          </div>
 
+          <!-- TABLA DE CLIENTES (Card independiente full-width) -->
+          <div class="glass-panel p-6 rounded-2xl flex flex-col space-y-4 w-full">
+            <h3 class="font-bold text-slate-350 text-md border-b border-slate-800/60 pb-2">Listado General de Clientes</h3>
+            
+            <div class="overflow-x-auto border border-slate-800/60 rounded-xl">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="bg-slate-900/60 text-slate-400 text-xs border-b border-slate-800">
+                    <th class="p-3">Nombre</th>
+                    <th class="p-3">Documento (RUC)</th>
+                    <th class="p-3">Tipo</th>
+                    <th class="p-3">Teléfono</th>
+                    <th class="p-3">Correo</th>
+                    <th class="p-3">Estado</th>
+                    <th class="p-3 text-center">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="tablaClientes" class="text-xs divide-y divide-slate-800/40 text-slate-350">
+                  <!-- Dinámico -->
+                </tbody>
+              </table>
+            </div>
           </div>
         </section>
 
@@ -1700,10 +1801,10 @@
                 </div>
 
                 <div>
-                  <label id="lblGastoMonto" class="block text-xs text-slate-400 font-semibold mb-1">Monto del Gasto
-                    *</label>
-                  <input type="number" step="any" id="gastoMonto" placeholder="0.00"
-                    class="w-full glass-input rounded-lg px-3 py-2 text-sm" required>
+                  <label class="block text-xs text-slate-400 font-semibold mb-1">Cuenta de Origen (Gastos Personales) *</label>
+                  <select id="gastoMiCuenta" class="w-full glass-input rounded-lg px-3 py-2 text-sm" required>
+                    <!-- Dinámico: Cuentas propias de gastos -->
+                  </select>
                 </div>
 
                 <div>
@@ -1714,11 +1815,9 @@
                 </div>
 
                 <div>
-                  <label class="block text-xs text-slate-400 font-semibold mb-1">Cuenta de Origen (Gastos Personales)
-                    *</label>
-                  <select id="gastoMiCuenta" class="w-full glass-input rounded-lg px-3 py-2 text-sm" required>
-                    <!-- Dinámico: Cuentas propias de gastos -->
-                  </select>
+                  <label id="lblGastoMonto" class="block text-xs text-slate-400 font-semibold mb-1">Monto del Gasto *</label>
+                  <input type="number" step="any" id="gastoMonto" placeholder="0.00"
+                    class="w-full glass-input rounded-lg px-3 py-2 text-sm" required>
                 </div>
 
                 <div>
@@ -1821,7 +1920,8 @@
                 <!-- Buscar Actualizaciones al Iniciar -->
                 <div class="flex items-center justify-between border-t border-slate-800/40 pt-4">
                   <div>
-                    <label for="chkUpdatesAuto" class="text-xs font-semibold text-slate-300">Buscar Actualizaciones</label>
+                    <label for="chkUpdatesAuto" class="text-xs font-semibold text-slate-300">Buscar
+                      Actualizaciones</label>
                     <p class="text-[9px] text-slate-500 mt-0.5">Buscar actualizaciones al abrir la app</p>
                   </div>
                   <input type="checkbox" id="chkUpdatesAuto"
@@ -1941,16 +2041,27 @@
                   Credenciales API Personalizadas</summary>
                 <div class="space-y-3 pt-3">
                   <!-- Guía de Configuración -->
-                  <div class="bg-indigo-950/20 border border-indigo-500/20 rounded-xl p-3.5 text-[10px] text-slate-350 leading-relaxed mb-3 space-y-2 select-text">
-                    <span class="font-bold text-indigo-400 block text-xs mb-1">Guía para configurar su Nube (Google Cloud):</span>
+                  <div
+                    class="bg-indigo-950/20 border border-indigo-500/20 rounded-xl p-3.5 text-[10px] text-slate-350 leading-relaxed mb-3 space-y-2 select-text">
+                    <span class="font-bold text-indigo-400 block text-xs mb-1">Guía para configurar su Nube (Google
+                      Cloud):</span>
                     <ol class="list-decimal pl-4 space-y-1.5">
-                      <li>Acceda a <a href="https://console.cloud.google.com/" target="_blank" class="text-indigo-400 hover:underline font-bold">Google Cloud Console</a> e inicie sesión.</li>
-                      <li>Cree un proyecto nuevo (ej: <span class="text-slate-100 font-mono">FENIX Suite Sync</span>).</li>
-                      <li>Vaya a la <strong>Biblioteca de APIs</strong> y active la API llamada <strong>Google Drive API</strong>.</li>
-                      <li>Configure la <strong>Pantalla de consentimiento de OAuth</strong> (Tipo de usuario: <strong>Externo</strong>, ingrese datos de soporte y guarde).</li>
-                      <li><strong>Paso Crítico</strong>: En la sección <strong>Usuarios de prueba (Test Users)</strong> agregue el correo de Google con el que iniciará sesión.</li>
-                      <li>Vaya a <strong>Credenciales</strong> &gt; <strong>Crear credenciales</strong> &gt; <strong>ID de cliente de OAuth</strong>. Elija tipo de aplicación: <strong class="text-slate-200">Aplicación de escritorio (Desktop App)</strong>.</li>
-                      <li>Copie el <strong>Client ID</strong> y <strong>Client Secret</strong> generados, colóquelos abajo, haga clic en <strong>Guardar Credenciales</strong> y luego conecte su cuenta.</li>
+                      <li>Acceda a <a href="https://console.cloud.google.com/" target="_blank"
+                          class="text-indigo-400 hover:underline font-bold">Google Cloud Console</a> e inicie sesión.
+                      </li>
+                      <li>Cree un proyecto nuevo (ej: <span class="text-slate-100 font-mono">FENIX Suite Sync</span>).
+                      </li>
+                      <li>Vaya a la <strong>Biblioteca de APIs</strong> y active la API llamada <strong>Google Drive
+                          API</strong>.</li>
+                      <li>Configure la <strong>Pantalla de consentimiento de OAuth</strong> (Tipo de usuario:
+                        <strong>Externo</strong>, ingrese datos de soporte y guarde).</li>
+                      <li><strong>Paso Crítico</strong>: En la sección <strong>Usuarios de prueba (Test Users)</strong>
+                        agregue el correo de Google con el que iniciará sesión.</li>
+                      <li>Vaya a <strong>Credenciales</strong> &gt; <strong>Crear credenciales</strong> &gt; <strong>ID
+                          de cliente de OAuth</strong>. Elija tipo de aplicación: <strong
+                          class="text-slate-200">Aplicación de escritorio (Desktop App)</strong>.</li>
+                      <li>Copie el <strong>Client ID</strong> y <strong>Client Secret</strong> generados, colóquelos
+                        abajo, haga clic en <strong>Guardar Credenciales</strong> y luego conecte su cuenta.</li>
                     </ol>
                   </div>
                   <div>

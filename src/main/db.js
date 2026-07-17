@@ -403,82 +403,114 @@ function exportarBaseDatosLocal() {
 // MÓDULO MOVIMIENTOS Y TRANSACCIÓN E-COMMERCE
 // ==========================================
 
+// Cola de promesas para serializar transacciones en la única conexión SQLite activa
+let transactionPromiseLock = Promise.resolve();
+
 async function registrarMovimientoTransaccional(movimientoData, ecommerceData = null) {
+  // Esperar a que termine cualquier transacción previa en cola
+  const currentTransaction = transactionPromiseLock;
+  
+  let resolveLock;
+  transactionPromiseLock = new Promise((resolve) => {
+    resolveLock = resolve;
+  });
+
+  try {
+    await currentTransaction;
+  } catch (err) {
+    // Ignorar fallos de transacciones previas
+  }
+
   return new Promise((resolve, reject) => {
     db.serialize(() => {
-      db.run('BEGIN TRANSACTION;');
-
-      const sqlMov = `
-        INSERT INTO movimientos (
-          id_cliente, id_cuenta, tipo_transaccion, monto, moneda, 
-          par_cambio, modalidad_cambio, valor_cambio, concepto, 
-          observaciones, fecha_contable, status_operacion, timestamp
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `;
-
-      db.run(
-        sqlMov,
-        [
-          movimientoData.id_cliente,
-          movimientoData.id_cuenta,
-          movimientoData.tipo_transaccion,
-          movimientoData.monto,
-          movimientoData.moneda,
-          movimientoData.par_cambio || null,
-          movimientoData.modalidad_cambio || 'FIJO',
-          movimientoData.valor_cambio || 1.0,
-          movimientoData.concepto,
-          movimientoData.observaciones,
-          movimientoData.fecha_contable,
-          movimientoData.status_operacion || 'COMPLETADO',
-          new Date().toISOString()
-        ],
-        function (err) {
-          if (err) {
-            db.run('ROLLBACK;');
-            return reject(err);
-          }
-
-          const idMovimiento = this.lastID;
-
-          // Si es transacción de tipo E-Commerce y vienen datos de producto
-          if (ecommerceData && (movimientoData.tipo_transaccion.startsWith('ECOMMERCE'))) {
-            const sqlEco = `
-              INSERT INTO ecommerce (
-                id_movimiento, producto, monto, moneda, cambio_aplicado, timestamp
-              ) VALUES (?, ?, ?, ?, ?, ?)
-            `;
-
-            db.run(
-              sqlEco,
-              [
-                idMovimiento,
-                ecommerceData.producto,
-                ecommerceData.monto,
-                ecommerceData.moneda,
-                ecommerceData.cambio_aplicado,
-                new Date().toISOString()
-              ],
-              function (errEco) {
-                if (errEco) {
-                  db.run('ROLLBACK;');
-                  return reject(errEco);
-                }
-
-                db.run('COMMIT;', (commitErr) => {
-                  if (commitErr) return reject(commitErr);
-                  resolve(idMovimiento);
-                });
-              }
-            );
-          } else {
-            db.run('COMMIT;', (commitErr) => {
-              if (commitErr) return reject(commitErr);
-              resolve(idMovimiento);
-            });
-          }
+      db.run('BEGIN TRANSACTION;', (beginErr) => {
+        if (beginErr) {
+          resolveLock(); // Liberar el lock inmediatamente
+          return reject(beginErr);
         }
-      );
+
+        const sqlMov = `
+          INSERT INTO movimientos (
+            id_cliente, id_cuenta, tipo_transaccion, monto, moneda, 
+            par_cambio, modalidad_cambio, valor_cambio, concepto, 
+            observaciones, fecha_contable, status_operacion, timestamp
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+
+        db.run(
+          sqlMov,
+          [
+            movimientoData.id_cliente,
+            movimientoData.id_cuenta,
+            movimientoData.tipo_transaccion,
+            movimientoData.monto,
+            movimientoData.moneda,
+            movimientoData.par_cambio || null,
+            movimientoData.modalidad_cambio || 'FIJO',
+            movimientoData.valor_cambio || 1.0,
+            movimientoData.concepto,
+            movimientoData.observaciones,
+            movimientoData.fecha_contable,
+            movimientoData.status_operacion || 'COMPLETADO',
+            new Date().toISOString()
+          ],
+          function (err) {
+            if (err) {
+              db.run('ROLLBACK;', () => {
+                resolveLock(); // Liberar el lock
+                reject(err);
+              });
+              return;
+            }
+
+            const idMovimiento = this.lastID;
+
+            // Si es transacción de tipo E-Commerce y vienen datos de producto
+            if (ecommerceData && (movimientoData.tipo_transaccion.startsWith('ECOMMERCE'))) {
+              const sqlEco = `
+                INSERT INTO ecommerce (
+                  id_movimiento, id_producto, producto, monto, moneda, cambio_aplicado, cantidad, timestamp
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+              `;
+
+              db.run(
+                sqlEco,
+                [
+                  idMovimiento,
+                  ecommerceData.id_producto || null,
+                  ecommerceData.producto,
+                  ecommerceData.monto,
+                  ecommerceData.moneda,
+                  ecommerceData.cambio_aplicado,
+                  ecommerceData.cantidad || 1,
+                  new Date().toISOString()
+                ],
+                function (errEco) {
+                  if (errEco) {
+                    db.run('ROLLBACK;', () => {
+                      resolveLock(); // Liberar el lock
+                      reject(errEco);
+                    });
+                    return;
+                  }
+
+                  db.run('COMMIT;', (commitErr) => {
+                    resolveLock(); // Liberar el lock
+                    if (commitErr) return reject(commitErr);
+                    resolve(idMovimiento);
+                  });
+                }
+              );
+            } else {
+              db.run('COMMIT;', (commitErr) => {
+                resolveLock(); // Liberar el lock
+                if (commitErr) return reject(commitErr);
+                resolve(idMovimiento);
+              });
+            }
+          }
+        );
+      });
     });
   });
 }
