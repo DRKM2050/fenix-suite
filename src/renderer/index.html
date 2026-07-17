@@ -1251,14 +1251,13 @@
             </div>
           </div>
 
-          <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
-            <!-- Columna 1: Establecer Cotización + Widget Chaco -->
-            <div class="space-y-6">
-              <!-- Ingreso de Tasa -->
-              <div class="glass-panel p-6 rounded-2xl space-y-4">
-                <h3 class="font-bold text-slate-350 text-md border-b border-slate-800/60 pb-2">Establecer Cotización</h3>
-                <form id="formCambio" class="space-y-4">
-                  <input type="hidden" id="cambioId">
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+            <!-- Columna 1: Establecer Cotización -->
+            <div class="glass-panel p-6 rounded-2xl space-y-4 flex flex-col justify-between h-full">
+              <h3 class="font-bold text-slate-350 text-md border-b border-slate-800/60 pb-2">Establecer Cotización</h3>
+              <form id="formCambio" class="space-y-4 flex-1 flex flex-col justify-between">
+                <input type="hidden" id="cambioId">
+                <div class="space-y-4">
                   <div>
                     <label class="block text-xs text-slate-400 font-semibold mb-1">Par de Divisa *</label>
                     <select id="cambioPar" class="w-full glass-input rounded-lg px-3 py-2.5 text-sm" required>
@@ -1275,55 +1274,55 @@
                     <input type="number" step="any" id="cambioVenta" placeholder="0.00"
                       class="w-full glass-input rounded-lg px-3 py-2.5 text-lg font-bold text-center text-indigo-400 bg-slate-950/60 border border-slate-800" required>
                   </div>
-                  <div class="flex gap-2">
-                    <button type="submit" id="btnGuardarCambio"
-                      class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-xl shadow-lg transition">
-                      Guardar Cotización
-                    </button>
-                    <button type="button" id="btnCancelarCambio"
-                      class="bg-slate-800 hover:bg-slate-700 text-slate-400 font-semibold px-4 py-3 rounded-xl text-sm transition hidden">
-                      Cancelar
-                    </button>
-                  </div>
-                </form>
-              </div>
-
-              <!-- Referencia Cambios Chaco -->
-              <div class="glass-panel p-6 rounded-2xl space-y-4">
-                <h3 class="font-bold text-slate-350 text-xs uppercase tracking-wider border-b border-slate-800/60 pb-2">Cotizaciones Chaco (Referencia)</h3>
-                <div class="rounded-xl overflow-hidden border border-slate-800 bg-slate-950/60 p-1">
-                  <iframe width="100%" height="240" src="https://www.cambioschaco.com.py/widgets/cotizacion/?lang=es" frameborder="0" style="filter: invert(0.9) hue-rotate(180deg); mix-blend-mode: screen;"></iframe>
                 </div>
-              </div>
+                <div class="flex gap-2 pt-4">
+                  <button type="submit" id="btnGuardarCambio"
+                    class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-xl shadow-lg transition">
+                    Guardar
+                  </button>
+                  <button type="button" id="btnCancelarCambio"
+                    class="bg-slate-800 hover:bg-slate-700 text-slate-400 font-semibold px-4 py-3 rounded-xl text-sm transition hidden">
+                    Cancelar
+                  </button>
+                </div>
+              </form>
             </div>
 
             <!-- Columna 2: Monedas y Cotizaciones Activas -->
-            <div class="glass-panel p-6 rounded-2xl space-y-4">
+            <div class="glass-panel p-6 rounded-2xl space-y-4 flex flex-col h-full">
               <h3 class="font-bold text-slate-350 text-xs uppercase tracking-wider border-b border-slate-800/60 pb-2">Monedas y Cotizaciones Activas</h3>
-              <div id="gridCotizacionesActivas" class="grid grid-cols-1 gap-2.5 text-slate-100">
+              <div id="gridCotizacionesActivas" class="grid grid-cols-1 gap-2.5 text-slate-100 flex-1 overflow-y-auto max-h-[320px]">
                 <!-- Dinámico -->
               </div>
             </div>
 
-            <!-- Columna 3: Historial Diario de Tasas -->
-            <div class="glass-panel p-6 rounded-2xl flex flex-col space-y-4">
-              <h3 class="font-bold text-slate-350 text-md border-b border-slate-800/60 pb-2">Historial Diario de Tasas</h3>
-              <div class="overflow-y-auto max-h-[500px] border border-slate-800/60 rounded-xl">
-                <table class="w-full text-left border-collapse">
-                  <thead>
-                    <tr class="bg-slate-900/60 text-slate-400 text-xs border-b border-slate-800">
-                      <th class="p-2.5">Fecha</th>
-                      <th class="p-2.5">Par Divisa</th>
-                      <th class="p-2.5 text-right">Compra</th>
-                      <th class="p-2.5 text-right">Venta</th>
-                      <th class="p-2.5 text-center">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody id="tablaCambios" class="text-xs divide-y divide-slate-800/40 text-slate-350">
-                    <!-- Dinámico -->
-                  </tbody>
-                </table>
+            <!-- Columna 3: Cotizaciones Chaco -->
+            <div class="glass-panel p-6 rounded-2xl space-y-4 flex flex-col h-full">
+              <h3 class="font-bold text-slate-350 text-xs uppercase tracking-wider border-b border-slate-800/60 pb-2">Cotizaciones Chaco (Referencia)</h3>
+              <div class="rounded-xl overflow-hidden border border-slate-800 bg-white p-1 flex-1 flex items-center justify-center">
+                <iframe width="100%" height="100%" min-height="280" src="https://www.cambioschaco.com.py/widgets/cotizacion/?lang=es" frameborder="0" style="min-height: 280px;"></iframe>
               </div>
+            </div>
+          </div>
+
+          <!-- Historial Diario de Tasas (Ancho completo) -->
+          <div class="glass-panel p-6 rounded-2xl flex flex-col space-y-4 w-full">
+            <h3 class="font-bold text-slate-350 text-md border-b border-slate-800/60 pb-2">Historial Diario de Tasas</h3>
+            <div class="overflow-y-auto max-h-[400px] border border-slate-800/60 rounded-xl">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="bg-slate-900/60 text-slate-400 text-xs border-b border-slate-800">
+                    <th class="p-3">Fecha Contable</th>
+                    <th class="p-3">Par Divisa</th>
+                    <th class="p-3 text-right">Compra</th>
+                    <th class="p-3 text-right">Venta</th>
+                    <th class="p-3 text-center">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="tablaCambios" class="text-xs divide-y divide-slate-800/40 text-slate-350">
+                  <!-- Dinámico -->
+                </tbody>
+              </table>
             </div>
           </div>
         </section>

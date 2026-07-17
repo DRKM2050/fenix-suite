@@ -773,29 +773,6 @@ async function cargarHistorialCliente() {
 // ==========================================
 // TASAS DE COTIZACIÓN
 // ==========================================
-function obtenerBanderaYDetallesPar(par) {
-  const partes = par.split('/');
-  const base = partes[0] || '';
-  const destino = partes[1] || '';
-  
-  const banderas = {
-    'USD': '🇺🇸',
-    'PYG': '🇵🇾',
-    'BRL': '🇧🇷',
-    'ARS': '🇦🇷',
-    'EUR': '🇪🇺',
-    'USDT': '🪙',
-    'USDC': '🪙',
-    'BTC': '🪙',
-    'ETH': '🪙'
-  };
-
-  const banderaBase = banderas[base] || '🏳️';
-  const banderaDestino = banderas[destino] || '🏳️';
-
-  return `${banderaBase} / ${banderaDestino}`;
-}
-
 async function refrescarCambios() {
   state.cambios = await window.api.cambios.listar();
   
@@ -807,7 +784,7 @@ async function refrescarCambios() {
       const tr = `
         <tr class="border-b border-slate-900 hover:bg-slate-900/20">
           <td class="p-2">${formatearFecha(cam.fecha_contable)}</td>
-          <td class="p-2 font-bold text-indigo-400 text-xs">${obtenerBanderaYDetallesPar(cam.par_divisa)} ${cam.par_divisa}</td>
+          <td class="p-2 font-bold text-indigo-400 text-xs">${cam.par_divisa}</td>
           <td class="p-2 text-right text-emerald-455 font-semibold font-mono">${formatearCotizacion(cam.valor_compra)}</td>
           <td class="p-2 text-right text-rose-500 font-semibold font-mono">${formatearCotizacion(cam.valor_venta)}</td>
           <td class="p-2 text-center">
@@ -842,7 +819,7 @@ async function refrescarCambios() {
         gridCot.insertAdjacentHTML('beforeend', `
           <div class="p-3 bg-slate-900/60 border border-slate-800/80 rounded-xl flex justify-between items-center hover:bg-slate-900/90 transition shadow-inner">
             <div>
-              <span class="text-[12px] text-slate-400 font-bold block uppercase tracking-wider">${obtenerBanderaYDetallesPar(c.par_divisa)} ${c.par_divisa}</span>
+              <span class="text-[12px] text-slate-400 font-bold block uppercase tracking-wider">${c.par_divisa}</span>
               <div class="flex items-baseline gap-1.5 mt-1">
                 <span class="text-[10px] text-emerald-450 font-semibold">C:</span>
                 <span class="text-[13px] font-black text-emerald-400 font-mono">${formatearCotizacion(c.valor_compra)}</span>
