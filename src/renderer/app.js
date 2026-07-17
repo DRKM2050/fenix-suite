@@ -244,6 +244,67 @@ function copiarAlPortapapeles(texto) {
   });
 }
 
+function mostrarNotificacionDescarga(filePath) {
+  const modal = document.getElementById('downloadNotificationModal');
+  const msg = document.getElementById('downloadNotificationMsg');
+  const btnOpen = document.getElementById('btnDownloadOpen');
+  const btnShowFolder = document.getElementById('btnDownloadShowFolder');
+  const btnCopy = document.getElementById('btnDownloadCopyPath');
+  const btnClose = document.getElementById('btnDownloadClose');
+
+  if (!modal || !msg) return;
+
+  msg.textContent = filePath;
+  modal.classList.remove('hidden');
+
+  // Clonar y reasignar los listeners para evitar acumulaciones
+  const newBtnOpen = btnOpen.cloneNode(true);
+  btnOpen.parentNode.replaceChild(newBtnOpen, btnOpen);
+  newBtnOpen.addEventListener('click', async () => {
+    try {
+      await window.api.app.openFile(filePath);
+    } catch (err) {
+      alert('Error al abrir el documento: ' + err.message);
+    }
+  });
+
+  const newBtnShowFolder = btnShowFolder.cloneNode(true);
+  btnShowFolder.parentNode.replaceChild(newBtnShowFolder, btnShowFolder);
+  newBtnShowFolder.addEventListener('click', async () => {
+    try {
+      await window.api.app.showItemInFolder(filePath);
+    } catch (err) {
+      alert('Error al mostrar en carpeta: ' + err.message);
+    }
+  });
+
+  const newBtnCopy = btnCopy.cloneNode(true);
+  btnCopy.parentNode.replaceChild(newBtnCopy, btnCopy);
+  newBtnCopy.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(filePath);
+      const originalText = newBtnCopy.innerHTML;
+      newBtnCopy.innerHTML = `
+        <svg class="h-3.5 w-3.5 text-emerald-450" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+        </svg> Copiado con éxito
+      `;
+      setTimeout(() => {
+        newBtnCopy.innerHTML = originalText;
+      }, 2000);
+    } catch (err) {
+      alert('Error al copiar la ruta: ' + err.message);
+    }
+  });
+
+  const newBtnClose = btnClose.cloneNode(true);
+  btnClose.parentNode.replaceChild(newBtnClose, btnClose);
+  newBtnClose.addEventListener('click', () => {
+    modal.classList.add('hidden');
+  });
+}
+window.mostrarNotificacionDescarga = mostrarNotificacionDescarga;
+
 // ==========================================
 // CONFIGURACIÓN DE FORMATO DECIMAL / MILES
 // ==========================================
@@ -2254,7 +2315,7 @@ function configurarFormularios() {
         tipo_transaccion: document.getElementById('filtroTipo').value || null
       };
       const path = await window.api.reportes.descargarPDF(filtros);
-      alert(`Reporte PDF guardado en su carpeta de descargas:\n${path}`);
+      mostrarNotificacionDescarga(path);
     } catch (err) {
       console.error('Error al exportar PDF:', err);
       alert('Error al generar el reporte PDF: ' + err.message);
@@ -2269,7 +2330,7 @@ function configurarFormularios() {
         tipo_transaccion: document.getElementById('filtroTipo').value || null
       };
       const path = await window.api.reportes.descargarExcel(filtros);
-      alert(`Reporte Excel guardado en su carpeta de descargas:\n${path}`);
+      mostrarNotificacionDescarga(path);
     } catch (err) {
       console.error('Error al exportar Excel:', err);
       alert('Error al generar el reporte Excel: ' + err.message);
@@ -2454,7 +2515,7 @@ function configurarFormularios() {
     try {
       const filtros = obtenerFiltrosReportes();
       const path = await window.api.reportes.descargarPDF(filtros);
-      alert(`Reporte PDF generado exitosamente y guardado en descargas:\n${path}`);
+      mostrarNotificacionDescarga(path);
     } catch (err) {
       console.error('Error al generar PDF en módulo reportes:', err);
       alert('Error al generar reporte PDF: ' + err.message);
@@ -2465,7 +2526,7 @@ function configurarFormularios() {
     try {
       const filtros = obtenerFiltrosReportes();
       const path = await window.api.reportes.descargarExcel(filtros);
-      alert(`Reporte Excel generado exitosamente y guardado en descargas:\n${path}`);
+      mostrarNotificacionDescarga(path);
     } catch (err) {
       console.error('Error al generar Excel en módulo reportes:', err);
       alert('Error al generar reporte Excel: ' + err.message);
@@ -2522,7 +2583,7 @@ function configurarFormularios() {
         try {
           const res = await window.api.backup.descargarArchivo();
           if (res.success) {
-            alert(`Base de datos exportada y guardada con éxito en:\n${res.path}`);
+            mostrarNotificacionDescarga(res.path);
           } else if (res.cancelled) {
             console.log('Exportación cancelada por el usuario.');
           }
@@ -2866,7 +2927,7 @@ function configurarFormularios() {
 
         const selLayout = document.getElementById('selLayoutCatalogo').value;
         const downloadPath = await window.api.reportes.descargarCatalogoPDF(updatedProducts, selLayout);
-        alert(`¡Catálogo PDF generado con éxito!\nGuardado en:\n${downloadPath}`);
+        mostrarNotificacionDescarga(downloadPath);
         closeEcoCatalogModal();
       } catch (err) {
         alert('Error al guardar y descargar el catálogo: ' + err.message);

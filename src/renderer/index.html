@@ -2536,6 +2536,48 @@
       </div>
     </div>
   </div>
+  <!-- Modal de Notificación de Descarga / Exportación Exitosa -->
+  <div id="downloadNotificationModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md hidden">
+    <div class="glass-panel w-full max-w-md p-6 rounded-3xl shadow-2xl text-center border border-slate-800 space-y-4">
+      <div class="flex justify-center">
+        <div class="h-12 w-12 bg-emerald-600/20 text-emerald-400 rounded-xl flex items-center justify-center border border-emerald-500/30">
+          <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+      </div>
+      <div>
+        <h3 class="text-lg font-bold text-slate-100 mb-1">¡Documento Generado!</h3>
+        <p id="downloadNotificationMsg" class="text-slate-400 text-xs px-2 break-all">El archivo se guardó correctamente.</p>
+      </div>
+      <div class="grid grid-cols-2 gap-2 pt-2">
+        <button type="button" id="btnDownloadOpen" class="bg-indigo-650 hover:bg-indigo-600 text-white font-semibold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow-lg shadow-indigo-650/20">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+          </svg>
+          Abrir Documento
+        </button>
+        <button type="button" id="btnDownloadShowFolder" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-1.5 border border-slate-700">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+          </svg>
+          Mostrar en Carpeta
+        </button>
+        <button type="button" id="btnDownloadCopyPath" class="col-span-2 bg-slate-850 hover:bg-slate-800 text-slate-350 font-semibold py-2 rounded-xl text-[11px] transition flex items-center justify-center gap-1.5 border border-slate-800/80">
+          <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+          </svg>
+          Copiar Ruta al Portapapeles
+        </button>
+      </div>
+      <div class="pt-2 border-t border-slate-900/60">
+        <button type="button" id="btnDownloadClose" class="w-full bg-slate-900 hover:bg-slate-850 text-slate-400 font-semibold py-2 rounded-xl text-xs transition">
+          Aceptar
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- Script del Controlador Frontend -->
   <script src="app.js"></script>

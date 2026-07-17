@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { autoUpdater } = require('electron-updater');
@@ -840,6 +840,26 @@ ipcMain.handle('app:relaunch', () => {
 
 ipcMain.handle('app:get-version', () => {
   return app.getVersion();
+});
+
+ipcMain.handle('app:open-file', async (event, filePath) => {
+  try {
+    await shell.openPath(filePath);
+    return { success: true };
+  } catch (err) {
+    console.error('Error al abrir archivo con shell:', err);
+    throw err;
+  }
+});
+
+ipcMain.handle('app:show-item-in-folder', async (event, filePath) => {
+  try {
+    shell.showItemInFolder(filePath);
+    return { success: true };
+  } catch (err) {
+    console.error('Error al mostrar archivo en Finder/Explorer:', err);
+    throw err;
+  }
 });
 
 // --- Forzar Foco del Sistema ---

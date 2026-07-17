@@ -462,7 +462,7 @@ async function generarCatalogoPDF(productos, tipo = 'comercial') {
       
       layoutHtml += `
         <div class="product-card-intermedio ${isOffer ? 'offer-highlight-sm' : ''}">
-          ${isOffer ? '<span class="offer-badge-sm">%</span>' : ''}
+          ${isOffer ? '<span class="offer-badge-sm">OFERTA</span>' : ''}
           <div class="product-img-container-sm">
             ${imgHtml}
           </div>
@@ -504,6 +504,10 @@ async function generarCatalogoPDF(productos, tipo = 'comercial') {
       <style>
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;750&family=Inter:wght@300;400;600;700&display=swap');
         
+        * {
+          box-sizing: border-box;
+        }
+
         body {
           font-family: 'Inter', sans-serif;
           color: #1e293b;
@@ -579,7 +583,7 @@ async function generarCatalogoPDF(productos, tipo = 'comercial') {
         }
 
         .product-img-container {
-          height: 90px;
+          height: 140px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -587,6 +591,7 @@ async function generarCatalogoPDF(productos, tipo = 'comercial') {
           border-radius: 8px;
           margin-bottom: 8px;
           overflow: hidden;
+          padding: 6px;
         }
 
         .product-img {
@@ -716,22 +721,22 @@ async function generarCatalogoPDF(productos, tipo = 'comercial') {
 
         .offer-badge-sm {
           position: absolute;
-          top: 4px;
-          right: 4px;
+          top: 3px;
+          right: 3px;
           background: #ef4444;
           color: #ffffff;
-          font-size: 7px;
-          font-weight: bold;
-          height: 12px;
-          width: 12px;
-          border-radius: 50%;
-          line-height: 12px;
+          font-size: 5.5px;
+          font-weight: 850;
+          padding: 1.5px 3.5px;
+          border-radius: 3px;
+          line-height: 1;
           text-align: center;
+          letter-spacing: 0.2px;
         }
 
         .offer-highlight-sm {
-          border: 1px solid #fca5a5 !important;
-          background-color: #fff5f5 !important;
+          border: 1.2px solid #ef4444 !important;
+          background-color: #fff1f2 !important;
         }
 
         /* Simple List Layout */

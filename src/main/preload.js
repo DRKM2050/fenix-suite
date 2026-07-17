@@ -141,7 +141,9 @@ contextBridge.exposeInMainWorld('api', {
   // Relaunch y Foco de aplicación
   app: {
     relaunch: () => ipcRenderer.invoke('app:relaunch'),
-    forceFocus: () => ipcRenderer.send('app:force-focus')
+    forceFocus: () => ipcRenderer.send('app:force-focus'),
+    openFile: (filePath) => ipcRenderer.invoke('app:open-file', filePath),
+    showItemInFolder: (filePath) => ipcRenderer.invoke('app:show-item-in-folder', filePath)
   },
 
   // Diálogos nativos síncronos de sistema (evitan pérdida de foco)
