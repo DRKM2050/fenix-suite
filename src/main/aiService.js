@@ -111,7 +111,7 @@ async function procesarComprobante(filePath) {
   const fileBuffer = fs.readFileSync(filePath);
   const base64Data = fileBuffer.toString('base64');
 
-  const defaultPrompt = 'Extrae la información financiera clave de esta captura de pantalla o fotografía de comprobante de transferencia bancaria o pago.';
+  const defaultPrompt = 'Extrae la información financiera clave de esta captura de pantalla o fotografía de comprobante de transferencia bancaria, pago o transacción fiat o cripto. Detecta con precisión la moneda o criptomoneda involucrada (ej: PYG, USDT, USD, BTC, BRL) e identifica las plataformas o bancos involucrados, la fecha, el monto y el concepto sin importar el idioma.';
   const systemPrompt = await getSystemPrompt('ai_prompt_comprobantes', defaultPrompt);
 
   const response = await ai.models.generateContent({
@@ -133,11 +133,12 @@ async function procesarComprobante(filePath) {
         properties: {
           monto: { type: 'NUMBER', description: 'Monto total de la transacción' },
           fecha: { type: 'STRING', description: 'Fecha de la transacción en formato YYYY-MM-DD (si solo hay DD/MM, deducir año actual)' },
-          banco_origen: { type: 'STRING', description: 'Nombre del banco o entidad de origen' },
-          banco_destino: { type: 'STRING', description: 'Nombre del banco o entidad de destino' },
-          concepto: { type: 'STRING', description: 'Concepto o referencia breve del pago' }
+          banco_origen: { type: 'STRING', description: 'Nombre del banco, billetera o plataforma de origen' },
+          banco_destino: { type: 'STRING', description: 'Nombre del banco, billetera o plataforma de destino' },
+          concepto: { type: 'STRING', description: 'Concepto o referencia breve del pago' },
+          divisa: { type: 'STRING', description: 'Código ISO o ticker de la moneda o criptomoneda detectada, ej: PYG, USDT, USD, BRL, BTC' }
         },
-        required: ['monto', 'fecha', 'banco_origen', 'banco_destino', 'concepto']
+        required: ['monto', 'fecha', 'banco_origen', 'banco_destino', 'concepto', 'divisa']
       }
     }
   });
@@ -153,12 +154,12 @@ async function procesarComprobante(filePath) {
 
 /**
  * Busca imágenes del producto utilizando Google Search Grounding.
- * Retorna exactamente 3 URLs.
+ * Retorna exactamente 3 imágenes con sus URLs y fondos hexadecimales.
  */
 async function buscarImagenesGrounding(nombreProducto) {
   const ai = await getAIClient();
 
-  const defaultPrompt = 'Search Google for the product "{producto}". Find exactly 3 direct URLs of high-quality square (1:1 aspect ratio) images of this product, preferably with clean studio backgrounds. Return strictly a JSON object matching the schema.';
+  const defaultPrompt = 'Search Google for the product "{producto}". Find exactly 3 direct URLs of high-quality square (1:1 aspect ratio) images of this product, preferably with clean studio backgrounds. For each image option, extract the dominant HEX color code of the product external background. Return strictly a JSON object matching the schema.';
   const systemPromptTemplate = await getSystemPrompt('ai_prompt_grounding', defaultPrompt);
   const prompt = systemPromptTemplate.replace('{producto}', nombreProducto);
 
@@ -171,13 +172,20 @@ async function buscarImagenesGrounding(nombreProducto) {
       responseSchema: {
         type: 'OBJECT',
         properties: {
-          urls: {
+          imagenes: {
             type: 'ARRAY',
-            description: '3 direct image URLs of the product',
-            items: { type: 'STRING' }
+            description: 'List of 3 product image options with their URLs and external background HEX color codes',
+            items: {
+              type: 'OBJECT',
+              properties: {
+                url: { type: 'STRING', description: 'Direct image URL' },
+                fondo_hex: { type: 'STRING', description: 'Dominant HEX color code of the external background, e.g. #FFFFFF' }
+              },
+              required: ['url', 'fondo_hex']
+            }
           }
         },
-        required: ['urls']
+        required: ['imagenes']
       }
     }
   });
@@ -187,7 +195,7 @@ async function buscarImagenesGrounding(nombreProducto) {
     return JSON.parse(text);
   } catch (err) {
     console.error('Error al parsear respuesta JSON de grounding:', text);
-    throw new Error('La búsqueda inteligente no devolvió URLs válidas: ' + err.message);
+    throw new Error('La búsqueda inteligente no devolvió imágenes válidas: ' + err.message);
   }
 }
 

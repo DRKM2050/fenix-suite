@@ -3716,8 +3716,8 @@ async function configurarAjustesYCalculadora() {
     txtAIApiKey.value = await window.api.opciones.get('ai_api_key') || '';
 
     const defaultCatalogPrompt = 'Analiza el siguiente catálogo comercial (imagen o documento PDF) y extrae una lista estructurada con los nombres de todos los productos legibles y sus respectivos precios. Si hay varios precios, prefiere el precio mayorista o de venta directa.';
-    const defaultReceiptPrompt = 'Extrae la información financiera clave de esta captura de pantalla o fotografía de comprobante de transferencia bancaria o pago.';
-    const defaultGroundingPrompt = 'Search Google for the product "{producto}". Find exactly 3 direct URLs of high-quality square (1:1 aspect ratio) images of this product, preferably with clean studio backgrounds. Return strictly a JSON object matching the schema.';
+    const defaultReceiptPrompt = 'Extrae la información financiera clave de esta captura de pantalla o fotografía de comprobante de transferencia bancaria, pago o transacción fiat o cripto. Detecta con precisión la moneda o criptomoneda involucrada (ej: PYG, USDT, USD, BTC, BRL) e identifica las plataformas o bancos involucrados, la fecha, el monto y el concepto sin importar el idioma.';
+    const defaultGroundingPrompt = 'Search Google for the product "{producto}". Find exactly 3 direct URLs of high-quality square (1:1 aspect ratio) images of this product, preferably with clean studio backgrounds. For each image option, extract the dominant HEX color code of the product external background. Return strictly a JSON object matching the schema.';
 
     txtAICatalogPrompt.value = await window.api.opciones.get('ai_prompt_catalogos') || defaultCatalogPrompt;
     txtAIReceiptPrompt.value = await window.api.opciones.get('ai_prompt_comprobantes') || defaultReceiptPrompt;
@@ -3933,7 +3933,43 @@ if (btnAICargarComprobante) {
           document.getElementById('movFecha').value = extracted.fecha || '';
         }
         if (document.getElementById('movConcepto')) {
-          document.getElementById('movConcepto').value = `Auto-IA: ${extracted.concepto || 'Transferencia'} (Banco: ${extracted.banco_origen || 'Origen'} -> ${extracted.banco_destino || 'Destino'})`;
+          document.getElementById('movConcepto').value = `Auto-IA: ${extracted.concepto || 'Transferencia'} (Canal: ${extracted.banco_origen || 'Origen'} -> ${extracted.banco_destino || 'Destino'})`;
+        }
+
+        // Auto-selección de Divisa (fiat o cripto)
+        if (extracted.divisa && document.getElementById('movMoneda')) {
+          const selectMoneda = document.getElementById('movMoneda');
+          const valueToSelect = extracted.divisa.toUpperCase().trim();
+          let matched = false;
+          for (let option of selectMoneda.options) {
+            if (option.value === valueToSelect || option.text.toUpperCase().includes(valueToSelect)) {
+              selectMoneda.value = option.value;
+              matched = true;
+              break;
+            }
+          }
+          if (matched) {
+            selectMoneda.dispatchEvent(new Event('change'));
+          }
+        }
+
+        // Auto-selección inteligente de cuenta involucrada
+        if (document.getElementById('movCuenta')) {
+          const selectCuenta = document.getElementById('movCuenta');
+          const orig = (extracted.banco_origen || '').toUpperCase();
+          const dest = (extracted.banco_destino || '').toUpperCase();
+          let matched = false;
+          for (let option of selectCuenta.options) {
+            const optText = option.text.toUpperCase();
+            if (optText.includes(orig) || optText.includes(dest)) {
+              selectCuenta.value = option.value;
+              matched = true;
+              break;
+            }
+          }
+          if (matched) {
+            selectCuenta.dispatchEvent(new Event('change'));
+          }
         }
 
         alert('¡Comprobante procesado con éxito!\nEl formulario de Nueva Operación ha sido autocompletado para su verificación.');
@@ -4183,22 +4219,29 @@ window.buscarImagenIA = async (idx) => {
 
   try {
     const res = await window.api.ai.buscarImagenes(p.producto);
-    const urls = res.urls || [];
+    const imagenes = res.imagenes || [];
     
     groundingLoading.classList.add('hidden');
     groundingResults.innerHTML = '';
 
-    if (urls.length === 0) {
+    if (imagenes.length === 0) {
       groundingResults.innerHTML = `<div class="col-span-3 py-6 text-center text-slate-500 text-xs">No se encontraron imágenes en la web para este producto.</div>`;
       return;
     }
 
-    urls.forEach((url, uidx) => {
+    imagenes.forEach((imgObj, uidx) => {
+      const url = imgObj.url;
+      const fondoHex = imgObj.fondo_hex || '#0f172a';
       const card = `
         <div onclick="seleccionarImagenDeGrounding('${url}', ${uidx})" id="groundingCard_${uidx}" 
-          class="glass-card p-3 rounded-2xl flex flex-col items-center justify-center border border-slate-800 hover:border-indigo-500 transition cursor-pointer text-center space-y-2">
-          <div class="h-28 w-28 rounded-xl bg-white overflow-hidden flex items-center justify-center border border-slate-750">
+          class="glass-card p-3 rounded-2xl flex flex-col items-center justify-center border border-slate-800 hover:border-indigo-500 transition cursor-pointer text-center space-y-2"
+          style="background: linear-gradient(135deg, ${fondoHex}33, ${fondoHex}66); border-color: ${fondoHex}55;">
+          <div class="h-28 w-28 rounded-xl overflow-hidden flex items-center justify-center border border-slate-750" style="background-color: ${fondoHex};">
             <img src="${url}" class="h-full w-full object-contain">
+          </div>
+          <div class="flex items-center gap-1.5 justify-center w-full">
+            <span class="h-2.5 w-2.5 rounded-full border border-white/20" style="background-color: ${fondoHex};"></span>
+            <span class="text-[9px] text-slate-455 font-semibold font-mono uppercase">${fondoHex}</span>
           </div>
           <span class="text-[9px] text-slate-500 truncate w-full px-1">${url}</span>
         </div>
