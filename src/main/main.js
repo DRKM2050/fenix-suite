@@ -746,8 +746,8 @@ ipcMain.handle('rep:descargar-excel', async (event, filtros) => {
   return pathFile;
 });
 
-ipcMain.handle('rep:descargar-catalogo-pdf', async (event, productos) => {
-  const pathFile = await reports.generarCatalogoPDF(productos);
+ipcMain.handle('rep:descargar-catalogo-pdf', async (event, productos, tipo) => {
+  const pathFile = await reports.generarCatalogoPDF(productos, tipo);
   return pathFile;
 });
 

@@ -828,6 +828,14 @@ async function generarCatalogoPDF(productos, tipo = 'comercial') {
   const fileName = `Catalogo_Productos_FNX_${Date.now()}.pdf`;
   const fullPath = path.join(downloadsPath, fileName);
 
+  const tempFilePath = path.join(app.getPath('temp'), `temp_catalogo_${Date.now()}.html`);
+  try {
+    fs.writeFileSync(tempFilePath, htmlContent, 'utf-8');
+  } catch (err) {
+    console.error('Error escribiendo archivo HTML temporal:', err);
+    return Promise.reject(new Error('No se pudo crear archivo temporal para catálogo: ' + err.message));
+  }
+
   return new Promise((resolve, reject) => {
     let win = new BrowserWindow({
       show: false,
@@ -836,7 +844,7 @@ async function generarCatalogoPDF(productos, tipo = 'comercial') {
       }
     });
 
-    win.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(htmlContent));
+    win.loadFile(tempFilePath);
 
     win.webContents.on('did-finish-load', () => {
       win.webContents.printToPDF({
@@ -847,11 +855,25 @@ async function generarCatalogoPDF(productos, tipo = 'comercial') {
       }).then(data => {
         fs.writeFileSync(fullPath, data);
         win.destroy();
+        try {
+          fs.unlinkSync(tempFilePath);
+        } catch (e) {}
         resolve(fullPath);
       }).catch(err => {
         win.destroy();
+        try {
+          fs.unlinkSync(tempFilePath);
+        } catch (e) {}
         reject(err);
       });
+    });
+
+    win.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
+      win.destroy();
+      try {
+        fs.unlinkSync(tempFilePath);
+      } catch (e) {}
+      reject(new Error(`Error al cargar el catálogo en la ventana de impresión: ${errorDescription} (${errorCode})`));
     });
   });
 }
