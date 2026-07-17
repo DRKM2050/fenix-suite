@@ -597,19 +597,31 @@ async function generarDatosPrueba() {
   await dbRun("INSERT OR REPLACE INTO opciones (clave_ajuste, valor_ajuste) VALUES ('cuenta_principal_id', ?)", [idMiCta2.toString()]);
   await dbRun("INSERT OR REPLACE INTO opciones (clave_ajuste, valor_ajuste) VALUES ('cuenta_gastos_personales_id', ?)", [idMiCta3.toString()]);
 
-  // 3.1 Crear productos E-commerce
+  // 3.1 Crear productos E-commerce con precio de venta y ofertas
   const prod1 = await dbRun(`
-    INSERT INTO ecommerce_productos (nombre, sku, stock, moneda_costo, monto_costo, cambio_costo, observaciones, timestamp)
-    VALUES ('[TEST] PlayStation 5 Slim', 'PS5-SLIM-TEST', 8, 'USD', 450.0, 1.0, 'Inventario de prueba [TEST]', ?)
+    INSERT INTO ecommerce_productos (nombre, sku, stock, moneda_costo, monto_costo, cambio_costo, observaciones, timestamp, precio_venta, imagen, es_oferta)
+    VALUES ('[TEST] PlayStation 5 Slim', 'PS5-SLIM-TEST', 8, 'USD', 450.0, 1.0, 'Inventario de prueba [TEST]', ?, 550.0, NULL, 0)
   `, [t.toISOString()]);
 
   const prod2 = await dbRun(`
-    INSERT INTO ecommerce_productos (nombre, sku, stock, moneda_costo, monto_costo, cambio_costo, observaciones, timestamp)
-    VALUES ('[TEST] iPhone 15 Pro Max', 'IPHONE-15-TEST', 5, 'USD', 1100.0, 1.0, 'Dispositivos gama alta [TEST]', ?)
+    INSERT INTO ecommerce_productos (nombre, sku, stock, moneda_costo, monto_costo, cambio_costo, observaciones, timestamp, precio_venta, imagen, es_oferta)
+    VALUES ('[TEST] iPhone 15 Pro Max', 'IPHONE-15-TEST', 5, 'USD', 1100.0, 1.0, 'Dispositivos gama alta [TEST]', ?, 1350.0, NULL, 1)
+  `, [t.toISOString()]);
+
+  const prod3 = await dbRun(`
+    INSERT INTO ecommerce_productos (nombre, sku, stock, moneda_costo, monto_costo, cambio_costo, observaciones, timestamp, precio_venta, imagen, es_oferta)
+    VALUES ('[TEST] Xbox Series X', 'XBOX-SX-TEST', 4, 'USD', 420.0, 1.0, 'Consola Microsoft de prueba [TEST]', ?, 500.0, NULL, 0)
+  `, [t.toISOString()]);
+
+  const prod4 = await dbRun(`
+    INSERT INTO ecommerce_productos (nombre, sku, stock, moneda_costo, monto_costo, cambio_costo, observaciones, timestamp, precio_venta, imagen, es_oferta)
+    VALUES ('[TEST] Nintendo Switch OLED', 'NSW-OLED-TEST', 10, 'USD', 280.0, 1.0, 'Consola portátil de prueba [TEST]', ?, 350.0, NULL, 1)
   `, [t.toISOString()]);
 
   const idProd1 = prod1.lastID;
   const idProd2 = prod2.lastID;
+  const idProd3 = prod3.lastID;
+  const idProd4 = prod4.lastID;
 
   // 4. Crear tasas de cambio para los últimos 7 días
   const fechaHoy = new Date();
