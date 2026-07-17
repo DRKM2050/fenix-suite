@@ -272,7 +272,7 @@ ipcMain.handle('db:cambios-eliminar', async (event, id) => {
 });
 
 // --- Base de Datos - Movimientos ---
-ipcMain.handle('db:movimientos-listar', async (event, filtros = {}) => {
+async function listarMovimientosHelper(filtros = {}) {
   let sql = `
     SELECT 
       m.*, 
@@ -332,6 +332,10 @@ ipcMain.handle('db:movimientos-listar', async (event, filtros = {}) => {
 
   sql += ' ORDER BY m.id_movimiento DESC';
   return await db.dbAll(sql, params);
+}
+
+ipcMain.handle('db:movimientos-listar', async (event, filtros = {}) => {
+  return await listarMovimientosHelper(filtros);
 });
 
 ipcMain.handle('db:movimientos-crear', async (event, rawMovimiento, rawEcommerce) => {
@@ -485,6 +489,10 @@ ipcMain.handle('db:movimientos-eliminar', async (event, id) => {
   });
 });
 
+ipcMain.handle('db:movimientos-liquidar', async (event, id) => {
+  return await db.dbRun(`UPDATE movimientos SET status_operacion = 'LIQUIDADO' WHERE id_movimiento = ?`, [id]);
+});
+
 // --- Productos E-Commerce CRUD ---
 ipcMain.handle('db:productos-listar', async () => {
   return await db.dbAll("SELECT * FROM ecommerce_productos ORDER BY nombre ASC");
@@ -560,6 +568,19 @@ ipcMain.handle('db:monedas-actualizar', async (event, rawMoneda) => {
 
 ipcMain.handle('db:monedas-eliminar', async (event, id) => {
   return await db.dbRun(`DELETE FROM monedas WHERE id_moneda = ?`, [id]);
+});
+
+// --- Base de Datos - Plataformas / Brokers (Nuevo) ---
+ipcMain.handle('db:plataformas-listar', async () => {
+  return await db.dbAll(`SELECT * FROM plataformas ORDER BY nombre ASC`);
+});
+
+ipcMain.handle('db:plataformas-crear', async (event, nombre) => {
+  return await db.dbRun(`INSERT OR IGNORE INTO plataformas (nombre) VALUES (?)`, [nombre.trim().toUpperCase()]);
+});
+
+ipcMain.handle('db:plataformas-eliminar', async (event, id) => {
+  return await db.dbRun(`DELETE FROM plataformas WHERE id_plataforma = ?`, [id]);
 });
 
 ipcMain.handle('db:relaciones-listar', async () => {
@@ -652,16 +673,37 @@ ipcMain.handle('db:backup-local', async () => {
   return await db.exportarBaseDatosLocal();
 });
 
+ipcMain.handle('db:descargar-archivo', async (event) => {
+  const { filePath } = await dialog.showSaveDialog(mainWindow, {
+    title: 'Exportar Base de Datos Fénix',
+    defaultPath: path.join(app.getPath('downloads'), 'gestion_admin_respaldo.db'),
+    filters: [
+      { name: 'Base de Datos SQLite', extensions: ['db'] }
+    ]
+  });
+
+  if (filePath) {
+    try {
+      fs.copyFileSync(db.dbPath, filePath);
+      return { success: true, path: filePath };
+    } catch (err) {
+      console.error('Error al exportar archivo .db:', err);
+      throw new Error('No se pudo copiar el archivo de base de datos: ' + err.message);
+    }
+  }
+  return { success: false, cancelled: true };
+});
+
 // --- Reportes (PDF / Excel) ---
 ipcMain.handle('rep:descargar-pdf', async (event, filtros) => {
   // Obtener movimientos filtrados primero
-  const data = await ipcMain.handlers['db:movimientos-listar'](event, filtros);
+  const data = await listarMovimientosHelper(filtros);
   const pathFile = await reports.generarReportePDF(filtros, data);
   return pathFile;
 });
 
 ipcMain.handle('rep:descargar-excel', async (event, filtros) => {
-  const data = await ipcMain.handlers['db:movimientos-listar'](event, filtros);
+  const data = await listarMovimientosHelper(filtros);
   const pathFile = await reports.generarReporteExcel(filtros, data);
   return pathFile;
 });

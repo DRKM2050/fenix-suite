@@ -64,7 +64,8 @@ contextBridge.exposeInMainWorld('api', {
     listar: (filtros) => ipcRenderer.invoke('db:movimientos-listar', filtros),
     crear: (movimiento, ecommerce) => ipcRenderer.invoke('db:movimientos-crear', movimiento, ecommerce),
     actualizar: (movimiento, ecommerce) => ipcRenderer.invoke('db:movimientos-actualizar', movimiento, ecommerce),
-    eliminar: (id) => ipcRenderer.invoke('db:movimientos-eliminar', id)
+    eliminar: (id) => ipcRenderer.invoke('db:movimientos-eliminar', id),
+    liquidar: (id) => ipcRenderer.invoke('db:movimientos-liquidar', id)
   },
 
   // Base de Datos - Productos E-Commerce (Nuevo)
@@ -83,6 +84,13 @@ contextBridge.exposeInMainWorld('api', {
     eliminar: (id) => ipcRenderer.invoke('db:mis-cuentas-eliminar', id)
   },
 
+  // Base de Datos - Plataformas / Brokers (Nuevo)
+  plataformas: {
+    listar: () => ipcRenderer.invoke('db:plataformas-listar'),
+    crear: (nombre) => ipcRenderer.invoke('db:plataformas-crear', nombre),
+    eliminar: (id) => ipcRenderer.invoke('db:plataformas-eliminar', id)
+  },
+
   // Base de Datos - Opciones
   opciones: {
     get: (clave) => ipcRenderer.invoke('db:opciones-get', clave),
@@ -91,7 +99,8 @@ contextBridge.exposeInMainWorld('api', {
 
   // Respaldos y Exportación
   backup: {
-    exportarLocal: () => ipcRenderer.invoke('db:backup-local')
+    exportarLocal: () => ipcRenderer.invoke('db:backup-local'),
+    descargarArchivo: () => ipcRenderer.invoke('db:descargar-archivo')
   },
 
   // Datos de Prueba

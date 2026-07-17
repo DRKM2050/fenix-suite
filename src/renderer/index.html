@@ -661,6 +661,34 @@
     </div>
   </div>
 
+  <!-- Modal de Confirmación para Descarga de Backup -->
+  <div id="backupDownloadModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md hidden">
+    <div class="glass-panel w-full max-w-sm p-6 rounded-3xl shadow-2xl text-center border border-slate-800">
+      <div class="mb-4 flex justify-center">
+        <div class="h-12 w-12 bg-rose-600/20 text-rose-400 rounded-xl flex items-center justify-center border border-rose-500/30">
+          <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+        </div>
+      </div>
+      <h3 class="text-lg font-bold text-slate-100 mb-1">Autorizar Exportación</h3>
+      <p class="text-slate-400 text-xs mb-4">Ingrese su clave maestra de seguridad para descargar la base de datos (.db).</p>
+      <form id="backupDownloadForm" class="space-y-4">
+        <input type="password" id="backupDownloadPassword" placeholder="Clave Maestra"
+          class="w-full glass-input rounded-xl px-3 py-2 text-center text-sm" required autocomplete="off">
+        <div class="flex gap-2">
+          <button type="button" id="btnCancelBackupDownload" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-350 font-semibold py-2 rounded-xl text-xs transition">
+            Cancelar
+          </button>
+          <button type="submit" class="flex-1 bg-rose-600 hover:bg-rose-500 text-white font-semibold py-2 rounded-xl text-xs transition shadow-lg shadow-rose-600/20">
+            Descargar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- ==========================================
        LAYOUT PRINCIPAL DE LA APLICACIÓN
        ========================================== -->
@@ -922,6 +950,28 @@
             </div>
           </div>
 
+          <!-- Cards de Transacciones Pendientes -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Card Pendientes a Cobrar -->
+            <div class="glass-card p-6 rounded-2xl border border-indigo-500/25 bg-indigo-950/10">
+              <div class="flex justify-between items-center mb-1">
+                <div class="text-indigo-400 text-xs font-bold tracking-wider uppercase">Pendientes a Cobrar (Cuentas por Cobrar)</div>
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-900/60 text-indigo-300">Activo</span>
+              </div>
+              <div id="kpiPendientesCobrar" class="text-3xl font-bold text-slate-100">0.00 <span class="text-sm text-indigo-400">USDT</span></div>
+              <p id="kpiPendientesCobrarCant" class="text-[11px] text-slate-400 mt-2">0 transacciones pendientes de cobro</p>
+            </div>
+            <!-- Card Pendientes a Pagar -->
+            <div class="glass-card p-6 rounded-2xl border border-rose-500/25 bg-rose-950/10">
+              <div class="flex justify-between items-center mb-1">
+                <div class="text-rose-455 text-xs font-bold tracking-wider uppercase">Pendientes a Pagar (Cuentas por Pagar)</div>
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-900/60 text-rose-300">Activo</span>
+              </div>
+              <div id="kpiPendientesPagar" class="text-3xl font-bold text-slate-100">0.00 <span class="text-sm text-rose-400">USDT</span></div>
+              <p id="kpiPendientesPagarCant" class="text-[11px] text-slate-400 mt-2">0 transacciones pendientes de pago</p>
+            </div>
+          </div>
+
           <!-- Gráfico y Flujos del Día -->
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="glass-panel col-span-2 p-6 rounded-2xl flex flex-col justify-between">
@@ -958,6 +1008,39 @@
                 <p class="text-[11px] text-slate-400">El volumen logístico está asociado directamente a las órdenes de
                   compras registradas en el día.</p>
               </div>
+            </div>
+          </div>
+
+          <!-- Panel de Transacciones Pendientes Prioritarias (Estilo similar a onboarding pero en tonos rojos) -->
+          <div id="panelPendientesPrioritarias"
+            class="glass-panel p-5 rounded-2xl border border-rose-500/25 bg-rose-950/10 mb-6 flex flex-col space-y-3 hidden">
+            <div class="flex items-center justify-between border-b border-rose-900/30 pb-2">
+              <h3 class="text-sm font-bold text-rose-455 flex items-center gap-2">
+                <svg class="h-4 w-4 text-rose-500 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                Transacciones Pendientes Prioritarias (Cuentas por Cobrar / Pagar)
+              </h3>
+              <span class="text-[9px] font-bold text-rose-455 tracking-wider uppercase bg-rose-950/80 px-2 py-0.5 rounded border border-rose-900/50">Por Liquidar</span>
+            </div>
+            <div class="overflow-y-auto max-h-[285px] border border-rose-900/20 rounded-xl bg-slate-950/40">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr class="bg-rose-955/20 border-b border-rose-900/30 text-rose-300 font-semibold">
+                    <th class="p-2.5">Fecha</th>
+                    <th class="p-2.5">Cliente</th>
+                    <th class="p-2.5">Cuenta</th>
+                    <th class="p-2.5">Tipo</th>
+                    <th class="p-2.5 text-right">Monto</th>
+                    <th class="p-2.5">Concepto / Variante</th>
+                    <th class="p-2.5 text-center">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="tablaDashPendientes" class="divide-y divide-rose-950/30 text-slate-300">
+                  <!-- Dinámico -->
+                </tbody>
+              </table>
             </div>
           </div>
 
@@ -1033,6 +1116,12 @@
                     <button type="button" id="btnMovNuevoCliente" title="Crear Cliente Rápido"
                       class="bg-indigo-650/40 border border-indigo-500/30 hover:bg-indigo-600/50 text-indigo-450 px-3 rounded-lg text-sm font-bold transition">+</button>
                   </div>
+                </div>
+                <!-- Variante Ocasional -->
+                <div id="movSubcategoriaOcasionalContainer" class="hidden">
+                  <label class="block text-xs text-slate-400 font-semibold mb-1">Variante / Subcategoría Ocasional</label>
+                  <input type="text" id="movSubcategoriaOcasional" placeholder="Ej: Ocasional Cripto, Ocasional E-com"
+                    class="w-full glass-input rounded-lg px-3 py-2 text-sm">
                 </div>
                 <!-- Cuenta -->
                 <div>
@@ -1154,6 +1243,18 @@
                   <label class="block text-xs text-slate-400 font-semibold mb-1">Observaciones</label>
                   <textarea id="movObservaciones" placeholder="Detalles adicionales de pago"
                     class="w-full glass-input rounded-lg px-3 py-2 text-sm h-16 resize-none"></textarea>
+                </div>
+
+                <!-- Transacción Pendiente (Cuentas por cobrar/pagar) -->
+                <div class="flex items-center justify-between border-t border-slate-800/40 pt-3 mb-2">
+                  <div class="flex flex-col">
+                    <span class="text-xs font-semibold text-slate-350">Marcar como Pendiente</span>
+                    <span class="text-[9px] text-slate-500">Excluir temporalmente del balance general</span>
+                  </div>
+                  <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="movEsPendiente" class="sr-only peer">
+                    <div class="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-400 after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-rose-600 peer-checked:after:bg-slate-100"></div>
+                  </label>
                 </div>
 
                 <div class="flex gap-2">
@@ -1298,7 +1399,7 @@
 
             <!-- Columna 3: Cotizaciones Chaco -->
             <div class="glass-panel p-6 rounded-2xl space-y-4 flex flex-col h-full">
-              <h3 class="font-bold text-slate-350 text-xs uppercase tracking-wider border-b border-slate-800/60 pb-2">Cotizaciones Chaco (Referencia)</h3>
+              <h3 class="font-bold text-slate-350 text-xs uppercase tracking-wider border-b border-slate-800/60 pb-2">Cotizaciones de Referencia</h3>
               <div class="rounded-xl overflow-hidden border border-slate-800 bg-white p-1 flex-1 flex items-center justify-center">
                 <iframe width="100%" height="100%" min-height="280" src="https://www.cambioschaco.com.py/widgets/cotizacion/?lang=es" frameborder="0" style="min-height: 280px;"></iframe>
               </div>
@@ -1884,32 +1985,40 @@
           </div>
         </section>
 
-        <!-- 7. VIEW: OPCIONES (REDISEÑADO) -->
         <section id="view-opciones" class="view-section space-y-6">
-          <div>
-            <h2 class="text-2xl font-bold text-slate-200">Ajustes del Sistema</h2>
-            <p class="text-slate-400 text-sm">Administración de catálogos corporativos, seguridad y automatizaciones</p>
+          <div class="flex flex-col md:flex-row md:items-center justify-between border-b border-slate-800/80 pb-4 gap-4">
+            <div>
+              <h2 class="text-2xl font-bold text-slate-200">Ajustes Generales</h2>
+              <p class="text-slate-400 text-sm">Administración de catálogos corporativos, seguridad y sincronización</p>
+            </div>
+            <!-- Sub-Navegación Ajustes -->
+            <div class="flex bg-slate-900/80 p-1 rounded-xl border border-slate-800/60 max-w-md w-full md:w-auto">
+              <button id="btnTabAjustesSistema" type="button"
+                class="flex-1 px-4 py-2 rounded-lg text-xs font-semibold bg-indigo-600 text-white transition duration-200">
+                Ajustes de Sistema
+              </button>
+              <button id="btnTabAjustesFinancieros" type="button"
+                class="flex-1 px-4 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 transition duration-200">
+                Ajustes Financieros
+              </button>
+            </div>
           </div>
 
-          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-
-            <!-- AJUSTES DEL SISTEMA (Contraseña y Automatizaciones) -->
+          <!-- PANEL A: CONFIGURACIÓN DEL SISTEMA -->
+          <div id="panelAjustesSistema" class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+            <!-- Columna 1: Automatizaciones y Seguridad -->
             <div class="glass-panel p-6 rounded-2xl space-y-6">
               <div>
-                <h3 class="font-bold text-slate-350 text-sm border-b border-slate-800/60 pb-2 mb-3">Ajustes del Sistema
-                </h3>
-
+                <h3 class="font-bold text-slate-350 text-sm border-b border-slate-800/60 pb-2 mb-3">Automatizaciones del Sistema</h3>
+                
                 <!-- Habilitar Cierre Automático Diario -->
                 <div class="space-y-4 mb-4">
                   <div class="flex items-center justify-between">
-                    <label for="chkCierreAuto" class="text-xs font-semibold text-slate-300">Cierre Diario
-                      Automático</label>
-                    <input type="checkbox" id="chkCierreAuto"
-                      class="h-4 w-4 accent-indigo-600 bg-slate-900 border-slate-800 rounded">
+                    <label for="chkCierreAuto" class="text-xs font-semibold text-slate-300">Cierre Diario Automático</label>
+                    <input type="checkbox" id="chkCierreAuto" class="h-4 w-4 accent-indigo-600 bg-slate-900 border-slate-800 rounded">
                   </div>
                   <div>
-                    <label class="block text-[10px] text-slate-500 font-semibold mb-1">Hora de Cierre Contable
-                      (HH:MM)</label>
+                    <label class="block text-[10px] text-slate-500 font-semibold mb-1">Hora de Cierre Contable (HH:MM)</label>
                     <input type="time" id="timeCierreAuto" class="w-full glass-input rounded px-3 py-1.5 text-xs">
                   </div>
                 </div>
@@ -1917,87 +2026,84 @@
                 <!-- Habilitar Cierre Mensual -->
                 <div class="space-y-4 border-t border-slate-800/40 pt-4">
                   <div class="flex items-center justify-between">
-                    <label for="chkCierreMensual" class="text-xs font-semibold text-slate-300">Bloqueo de Mes
-                      Cerrado</label>
-                    <input type="checkbox" id="chkCierreMensual"
-                      class="h-4 w-4 accent-indigo-600 bg-slate-900 border-slate-800 rounded">
+                    <label for="chkCierreMensual" class="text-xs font-semibold text-slate-300">Bloqueo de Mes Cerrado</label>
+                    <input type="checkbox" id="chkCierreMensual" class="h-4 w-4 accent-indigo-600 bg-slate-900 border-slate-800 rounded">
                   </div>
                   <div>
-                    <label class="block text-[10px] text-slate-500 font-semibold mb-1">Día del Mes de Cierre (Ej:
-                      30)</label>
-                    <input type="number" min="1" max="31" id="diaCierreMensual" placeholder="Día"
-                      class="w-full glass-input rounded px-3 py-1.5 text-xs">
+                    <label class="block text-[10px] text-slate-500 font-semibold mb-1">Día del Mes de Cierre (Ej: 30)</label>
+                    <input type="number" min="1" max="31" id="diaCierreMensual" placeholder="Día" class="w-full glass-input rounded px-3 py-1.5 text-xs">
                   </div>
                 </div>
 
                 <!-- Buscar Actualizaciones al Iniciar -->
                 <div class="flex items-center justify-between border-t border-slate-800/40 pt-4">
                   <div>
-                    <label for="chkUpdatesAuto" class="text-xs font-semibold text-slate-300">Buscar
-                      Actualizaciones</label>
+                    <label for="chkUpdatesAuto" class="text-xs font-semibold text-slate-300">Buscar Actualizaciones</label>
                     <p class="text-[9px] text-slate-500 mt-0.5">Buscar actualizaciones al abrir la app</p>
                   </div>
-                  <input type="checkbox" id="chkUpdatesAuto"
-                    class="h-4 w-4 accent-indigo-600 bg-slate-900 border-slate-800 rounded">
+                  <input type="checkbox" id="chkUpdatesAuto" class="h-4 w-4 accent-indigo-600 bg-slate-900 border-slate-800 rounded">
+                </div>
+
+                <!-- Activar Widget Cambios Chaco -->
+                <div class="flex items-center justify-between border-t border-slate-800/40 pt-4">
+                  <div>
+                    <label for="chkChacoWidget" class="text-xs font-semibold text-slate-300">Widget Cambios Chaco</label>
+                    <p class="text-[9px] text-slate-500 mt-0.5">Mostrar cotizaciones de referencia externa</p>
+                  </div>
+                  <input type="checkbox" id="chkChacoWidget" class="h-4 w-4 accent-indigo-600 bg-slate-900 border-slate-800 rounded" checked>
                 </div>
               </div>
 
               <!-- Cambiar Clave Maestra -->
               <div class="border-t border-slate-800/65 pt-4">
-                <h3 class="font-bold text-slate-350 text-sm border-b border-slate-800/60 pb-2 mb-3">Clave de Seguridad
-                </h3>
+                <h3 class="font-bold text-slate-350 text-sm border-b border-slate-800/60 pb-2 mb-3">Clave de Seguridad</h3>
                 <form id="formCambiarClave" class="space-y-3">
                   <div>
                     <label class="block text-[10px] text-slate-400 font-semibold mb-1">Nueva Clave de Acceso</label>
-                    <input type="password" id="optNuevaClave" placeholder="Escriba nueva clave"
-                      class="w-full glass-input rounded-lg px-3 py-2 text-xs" required>
+                    <input type="password" id="optNuevaClave" placeholder="Escriba nueva clave" class="w-full glass-input rounded-lg px-3 py-2 text-xs" required>
                   </div>
-                  <button type="submit"
-                    class="w-full bg-rose-700 hover:bg-rose-600 text-white font-semibold py-2 rounded-lg text-xs transition">
+                  <button type="submit" class="w-full bg-rose-700 hover:bg-rose-600 text-white font-semibold py-2 rounded-lg text-xs transition">
                     Actualizar Contraseña
                   </button>
                 </form>
               </div>
 
-              <!-- Mantenimiento - Copia de Seguridad -->
+              <!-- Mantenimiento - Respaldos -->
               <div class="border-t border-slate-800/65 pt-4">
                 <h3 class="font-bold text-slate-350 text-sm border-b border-slate-800/60 pb-2 mb-3">Respaldos</h3>
-                <button id="btnBackupLocal"
-                  class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2 rounded-lg text-xs transition flex items-center justify-center gap-2">
+                <button id="btnBackupLocal" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2 rounded-lg text-xs transition flex items-center justify-center gap-2">
                   <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
                   </svg>
                   Respaldar base de datos
                 </button>
-                <div class="flex gap-2">
-                  <button id="btnGenerarSimulacion"
-                    class="flex-1 bg-indigo-650 hover:bg-indigo-600 text-white font-semibold py-2 rounded-lg text-[10px] transition">Cargar
-                    Datos Prueba</button>
-                  <button id="btnLimpiarSimulacion"
-                    class="flex-1 bg-slate-800 hover:bg-slate-700 text-rose-400 font-semibold py-2 rounded-lg text-[10px] transition">Limpiar
-                    Prueba</button>
+                <button id="btnDescargarDB" class="w-full mt-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2 rounded-lg text-xs transition flex items-center justify-center gap-2 border border-indigo-400/20">
+                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  Descargar Base de Datos (.db)
+                </button>
+                <div class="flex gap-2 mt-2">
+                  <button id="btnGenerarSimulacion" class="flex-1 bg-indigo-650/40 hover:bg-indigo-600/50 text-indigo-400 font-semibold py-2 rounded-lg text-[10px] transition">Cargar Datos Prueba</button>
+                  <button id="btnLimpiarSimulacion" class="flex-1 bg-slate-800 hover:bg-slate-700 text-rose-455 font-semibold py-2 rounded-lg text-[10px] transition">Limpiar Prueba</button>
                 </div>
                 <div id="backupStatus" class="mt-2 text-center text-[10px] text-slate-500 font-medium"></div>
               </div>
             </div>
 
-            <!-- SINCRONIZACIÓN EN LA NUBE (Google Drive) -->
+            <!-- Columna 2: Sincronización en la Nube -->
             <div class="glass-panel p-6 rounded-2xl space-y-6">
               <div class="border-b border-slate-800/60 pb-2 mb-3 flex items-center justify-between">
                 <h3 class="font-bold text-slate-350 text-sm">Sincronización en la Nube</h3>
-                <span id="driveBadgeEstado"
-                  class="px-2 py-0.5 rounded text-[8px] font-bold bg-rose-955 text-rose-455 border border-rose-900">DESCONECTADO</span>
+                <span id="driveBadgeEstado" class="px-2 py-0.5 rounded text-[8px] font-bold bg-rose-955 text-rose-455 border border-rose-900">DESCONECTADO</span>
               </div>
               <p class="text-slate-400 text-[10px] leading-relaxed">
-                Vincule su cuenta de Google Drive para respaldar automáticamente y compartir la base de datos entre
-                diferentes computadoras.
+                Vincule su cuenta de Google Drive para respaldar automáticamente y compartir la base de datos entre diferentes computadoras.
               </p>
 
               <!-- Conexión Cuenta de Google -->
               <div class="space-y-3">
-                <div id="driveUserContainer"
-                  class="hidden text-xs text-slate-300 font-semibold bg-slate-900 border border-slate-800 p-2.5 rounded-lg flex items-center justify-between">
+                <div id="driveUserContainer" class="hidden text-xs text-slate-300 font-semibold bg-slate-900 border border-slate-800 p-2.5 rounded-lg flex items-center justify-between">
                   <div class="truncate">
                     <div class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Cuenta Google Vinc.</div>
                     <span id="driveUserEmail">correo@ejemplo.com</span>
@@ -2005,11 +2111,9 @@
                   <div class="h-2 w-2 rounded-full bg-emerald-450" title="Activo"></div>
                 </div>
 
-                <button id="btnDriveConectar"
-                  class="w-full bg-indigo-650 hover:bg-indigo-600 text-white font-semibold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-2">
+                <button id="btnDriveConectar" class="w-full bg-indigo-650 hover:bg-indigo-600 text-white font-semibold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-2">
                   <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-                    <path
-                      d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.114-5.18 4.114-3.478 0-6.3-2.823-6.3-6.3 0-3.478 2.822-6.3 6.3-6.3 1.606 0 3.011.603 4.1 1.567l3.078-3.078C18.995 2.223 15.894 1 12.24 1 6.033 1 1 6.033 1 12.24s5.033 11.24 11.24 11.24c6.478 0 10.793-4.537 10.793-11 0-.746-.08-1.484-.22-2.195H12.24z" />
+                    <path d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.114-5.18 4.114-3.478 0-6.3-2.823-6.3-6.3 0-3.478 2.822-6.3 6.3-6.3 1.606 0 3.011.603 4.1 1.567l3.078-3.078C18.995 2.223 15.894 1 12.24 1 6.033 1 1 6.033 1 12.24s5.033 11.24 11.24 11.24c6.478 0 10.793-4.537 10.793-11 0-.746-.08-1.484-.22-2.195H12.24z" />
                   </svg>
                   Conectar Cuenta de Google
                 </button>
@@ -2018,30 +2122,23 @@
               <!-- Sincronización Automática Toggle -->
               <div class="flex items-center justify-between border-t border-slate-800/40 pt-4">
                 <div>
-                  <label for="chkDriveSyncAuto" class="text-xs font-semibold text-slate-300">Sincronización
-                    Automática</label>
+                  <label for="chkDriveSyncAuto" class="text-xs font-semibold text-slate-300">Sincronización Automática</label>
                   <p class="text-[9px] text-slate-500 mt-0.5">Respaldar al cerrar operaciones del día</p>
                 </div>
-                <input type="checkbox" id="chkDriveSyncAuto"
-                  class="h-4 w-4 accent-indigo-600 bg-slate-900 border-slate-800 rounded">
+                <input type="checkbox" id="chkDriveSyncAuto" class="h-4 w-4 accent-indigo-600 bg-slate-900 border-slate-800 rounded">
               </div>
 
               <!-- Acciones Manuales -->
-              <div id="driveAccionesManuales"
-                class="space-y-2 border-t border-slate-800/40 pt-4 opacity-50 pointer-events-none transition duration-200">
-                <button id="btnDriveSubirAhora"
-                  class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2 rounded-lg text-xs transition flex items-center justify-center gap-1.5">
+              <div id="driveAccionesManuales" class="space-y-2 border-t border-slate-800/40 pt-4 opacity-50 pointer-events-none transition duration-205">
+                <button id="btnDriveSubirAhora" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2 rounded-lg text-xs transition flex items-center justify-center gap-1.5">
                   <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                   </svg>
                   Subir Respaldo Ahora
                 </button>
-                <button id="btnDriveDescargarAhora"
-                  class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2 rounded-lg text-xs transition flex items-center justify-center gap-1.5">
+                <button id="btnDriveDescargarAhora" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2 rounded-lg text-xs transition flex items-center justify-center gap-1.5">
                   <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                   </svg>
                   Descargar Última Base de Datos
                 </button>
@@ -2049,94 +2146,114 @@
 
               <!-- Ajustes de Credenciales (Desplegable) -->
               <details class="border-t border-slate-800/40 pt-4">
-                <summary
-                  class="text-[10px] text-slate-500 font-semibold hover:text-slate-350 cursor-pointer select-none">
-                  Credenciales API Personalizadas</summary>
+                <summary class="text-[10px] text-slate-500 font-semibold hover:text-slate-350 cursor-pointer select-none">Credenciales API Personalizadas</summary>
                 <div class="space-y-3 pt-3">
-                  <!-- Guía de Configuración -->
-                  <div
-                    class="bg-indigo-950/20 border border-indigo-500/20 rounded-xl p-3.5 text-[10px] text-slate-350 leading-relaxed mb-3 space-y-2 select-text">
-                    <span class="font-bold text-indigo-400 block text-xs mb-1">Guía para configurar su Nube (Google
-                      Cloud):</span>
-                    <ol class="list-decimal pl-4 space-y-1.5">
-                      <li>Acceda a <a href="https://console.cloud.google.com/" target="_blank"
-                          class="text-indigo-400 hover:underline font-bold">Google Cloud Console</a> e inicie sesión.
-                      </li>
-                      <li>Cree un proyecto nuevo (ej: <span class="text-slate-100 font-mono">FENIX Suite Sync</span>).
-                      </li>
-                      <li>Vaya a la <strong>Biblioteca de APIs</strong> y active la API llamada <strong>Google Drive
-                          API</strong>.</li>
-                      <li>Configure la <strong>Pantalla de consentimiento de OAuth</strong> (Tipo de usuario:
-                        <strong>Externo</strong>, ingrese datos de soporte y guarde).
-                      </li>
-                      <li><strong>Paso Crítico</strong>: En la sección <strong>Usuarios de prueba (Test Users)</strong>
-                        agregue el correo de Google con el que iniciará sesión.</li>
-                      <li>Vaya a <strong>Credenciales</strong> &gt; <strong>Crear credenciales</strong> &gt; <strong>ID
-                          de cliente de OAuth</strong>. Elija tipo de aplicación: <strong
-                          class="text-slate-200">Aplicación de escritorio (Desktop App)</strong>.</li>
-                      <li>Copie el <strong>Client ID</strong> y <strong>Client Secret</strong> generados, colóquelos
-                        abajo, haga clic en <strong>Guardar Credenciales</strong> y luego conecte su cuenta.</li>
-                    </ol>
-                  </div>
                   <div>
                     <label class="block text-[9px] text-slate-500 font-semibold mb-1">Google Client ID</label>
-                    <input type="text" id="txtDriveClientId" placeholder="ID de cliente de Google Cloud"
-                      class="w-full glass-input rounded px-2.5 py-1.5 text-[10px]">
+                    <input type="text" id="txtDriveClientId" placeholder="ID de cliente de Google Cloud" class="w-full glass-input rounded px-2.5 py-1 text-[10px]">
                   </div>
                   <div>
                     <label class="block text-[9px] text-slate-500 font-semibold mb-1">Google Client Secret</label>
-                    <input type="password" id="txtDriveClientSecret" placeholder="Secreto de cliente de Google Cloud"
-                      class="w-full glass-input rounded px-2.5 py-1.5 text-[10px]">
+                    <input type="password" id="txtDriveClientSecret" placeholder="Secreto de cliente de Google Cloud" class="w-full glass-input rounded px-2.5 py-1 text-[10px]">
                   </div>
-                  <button id="btnGuardarCredencialesDrive"
-                    class="w-full bg-indigo-650/20 hover:bg-indigo-650/40 text-indigo-400 text-[10px] font-semibold py-1.5 rounded transition">Guardar
-                    Credenciales</button>
+                  <button id="btnGuardarCredencialesDrive" class="w-full bg-indigo-650/20 hover:bg-indigo-650/40 text-indigo-400 text-[10px] font-semibold py-1.5 rounded transition">Guardar Credenciales</button>
                 </div>
               </details>
             </div>
 
-            <!-- AJUSTES DE USUARIO (Datos Corporativos no-editables por accidente) -->
+            <!-- Columna 3: Datos Corporativos -->
             <div class="glass-panel p-6 rounded-2xl space-y-4">
               <div class="flex justify-between items-center border-b border-slate-800/60 pb-2">
                 <h3 class="font-bold text-slate-350 text-sm">Datos Corporativos</h3>
-                <button id="btnEditarDatosEmpresa"
-                  class="text-indigo-400 hover:text-indigo-300 font-semibold text-xs flex items-center gap-1">
+                <button id="btnEditarDatosEmpresa" class="text-indigo-400 hover:text-indigo-300 font-semibold text-xs flex items-center gap-1">
                   <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                   </svg> Editar
                 </button>
               </div>
               <div class="space-y-4 text-xs">
                 <div>
-                  <span class="block text-slate-500 font-semibold uppercase tracking-wider text-[10px]">Razón Social /
-                    Nombre</span>
+                  <span class="block text-slate-500 font-semibold uppercase tracking-wider text-[10px]">Razón Social / Nombre</span>
                   <div id="lblEmpresaNombre" class="text-slate-200 font-bold mt-1 text-sm">--</div>
                 </div>
                 <div>
-                  <span class="block text-slate-500 font-semibold uppercase tracking-wider text-[10px]">Identificación
-                    Fiscal / RUC</span>
+                  <span class="block text-slate-500 font-semibold uppercase tracking-wider text-[10px]">Identificación Fiscal / RUC</span>
                   <div id="lblEmpresaRuc" class="text-slate-200 font-bold mt-1 text-sm">--</div>
                 </div>
                 <div>
-                  <span class="block text-slate-500 font-semibold uppercase tracking-wider text-[10px]">Correo
-                    Electrónico Contable</span>
+                  <span class="block text-slate-500 font-semibold uppercase tracking-wider text-[10px]">Correo Electrónico Contable</span>
                   <div id="lblEmpresaEmail" class="text-slate-200 font-bold mt-1 text-sm">--</div>
                 </div>
                 <div>
-                  <span class="block text-slate-500 font-semibold uppercase tracking-wider text-[10px]">Teléfono
-                    Administración</span>
+                  <span class="block text-slate-500 font-semibold uppercase tracking-wider text-[10px]">Teléfono Administración</span>
                   <div id="lblEmpresaTelefono" class="text-slate-200 font-bold mt-1 text-sm">--</div>
                 </div>
                 <div>
-                  <span class="block text-slate-500 font-semibold uppercase tracking-wider text-[10px]">Moneda Principal
-                    del Sistema</span>
+                  <span class="block text-slate-500 font-semibold uppercase tracking-wider text-[10px]">Moneda Principal del Sistema</span>
                   <div id="lblEmpresaMoneda" class="text-indigo-400 font-bold mt-1 text-sm">--</div>
                 </div>
               </div>
             </div>
+          </div>
 
-            <!-- MIS CUENTAS -->
+          <!-- PANEL B: CONFIGURACIÓN FINANCIERA Y ADMINISTRATIVA -->
+          <div id="panelAjustesFinancieros" class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start hidden">
+            <!-- Columna 1: Margen, Comisiones y Brokers -->
+            <div class="glass-panel p-6 rounded-2xl space-y-6">
+              <!-- Método de Márgenes -->
+              <div>
+                <h3 class="font-bold text-slate-350 text-sm border-b border-slate-800/60 pb-2 mb-3">Método de Márgenes / Costeo</h3>
+                <div class="space-y-3">
+                  <select id="selMargenMetodo" class="w-full glass-input rounded-lg px-3 py-2 text-xs font-semibold bg-slate-900">
+                    <option value="FIFO">FIFO (First-In, First-Out)</option>
+                    <option value="CPP">CPP (Costo Promedio Ponderado)</option>
+                  </select>
+                  <p id="lblMargenDescripcion" class="text-[10px] text-slate-400 leading-relaxed bg-slate-950/60 p-2.5 rounded-lg border border-slate-800/50">
+                    FIFO: Los primeros activos en ingresar son los primeros en salir. Útil para seguimiento fiscal y contable estricto.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Comisiones de Red -->
+              <div class="border-t border-slate-800/60 pt-4">
+                <h3 class="font-bold text-slate-350 text-sm border-b border-slate-800/60 pb-2 mb-3">Comisiones de Red Predeterminadas</h3>
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <label class="block text-[9px] text-slate-500 font-semibold mb-0.5">Comisión USDT (Cripto)</label>
+                    <input type="number" step="any" id="feeUSDT" placeholder="1.00" class="w-full glass-input rounded px-2.5 py-1 text-xs">
+                  </div>
+                  <div>
+                    <label class="block text-[9px] text-slate-500 font-semibold mb-0.5">Comisión PYG (Fiat)</label>
+                    <input type="number" step="any" id="feePYG" placeholder="0" class="w-full glass-input rounded px-2.5 py-1 text-xs">
+                  </div>
+                </div>
+                <button id="btnGuardarComisiones" type="button" class="w-full mt-3 bg-indigo-650/40 hover:bg-indigo-650/60 text-indigo-400 text-xs font-semibold py-1.5 rounded transition">Guardar Comisiones</button>
+              </div>
+
+              <!-- CRUD Plataformas / Brokers -->
+              <div class="border-t border-slate-800/60 pt-4">
+                <h3 class="font-bold text-slate-350 text-sm border-b border-slate-800/60 pb-2 mb-3">Gestión de Plataformas / Brokers</h3>
+                <form id="formPlataforma" class="flex gap-2 mb-3">
+                  <input type="text" id="platNombre" placeholder="Binance, Continental, etc." class="flex-1 glass-input rounded px-2.5 py-1 text-xs" required>
+                  <button type="submit" class="bg-emerald-650 hover:bg-emerald-600 text-white text-xs font-semibold px-3 py-1 rounded transition">Agregar</button>
+                </form>
+                <div class="overflow-y-auto max-h-32 border border-slate-900 rounded-lg">
+                  <table class="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr class="bg-slate-900 text-slate-500 border-b border-slate-850">
+                        <th class="p-2">Plataforma</th>
+                        <th class="p-2 text-center" style="width: 80px;">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody id="tablaPlataformas">
+                      <!-- Dinámico -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Columna 2: Mis Cuentas -->
             <div class="glass-panel p-6 rounded-2xl space-y-4">
               <div class="flex justify-between items-center border-b border-slate-800/60 pb-2">
                 <h3 class="font-bold text-slate-350 text-sm">Mis Cuentas</h3>
@@ -2161,8 +2278,7 @@
               <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800/60">
                 <div>
                   <label class="block text-[9px] text-slate-500 font-semibold mb-0.5">Cta Principal</label>
-                  <select id="selCtaPrincipalComercial"
-                    class="w-full glass-input rounded px-2 py-1 text-[11px]"></select>
+                  <select id="selCtaPrincipalComercial" class="w-full glass-input rounded px-2 py-1 text-[11px]"></select>
                 </div>
                 <div>
                   <label class="block text-[9px] text-slate-500 font-semibold mb-0.5">Cta Gastos Pers</label>
@@ -2171,24 +2287,20 @@
               </div>
             </div>
 
-            <!-- AJUSTES ADMINISTRATIVOS (CRUD de monedas, relaciones, y tipos transaccion) -->
+            <!-- Columna 3: Categorías Operativas, Monedas y Relaciones -->
             <div class="glass-panel p-6 rounded-2xl space-y-6">
               <!-- 1. Gestión de Tipos de Transacción -->
               <div>
-                <h3 class="font-bold text-slate-350 text-sm border-b border-slate-800/60 pb-2 mb-3">Tipos de Transacción
-                </h3>
+                <h3 class="font-bold text-slate-350 text-sm border-b border-slate-800/60 pb-2 mb-3">Tipos de Transacción</h3>
                 <form id="formAdminTipo" class="flex flex-col gap-2 mb-3">
                   <div class="flex gap-2">
-                    <input type="text" id="adminTipoNombre" placeholder="NUEVO_TIPO"
-                      class="flex-1 glass-input rounded px-2.5 py-1 text-xs" required>
+                    <input type="text" id="adminTipoNombre" placeholder="NUEVO_TIPO" class="flex-1 glass-input rounded px-2.5 py-1 text-xs" required>
                     <select id="adminTipoCategoria" class="glass-input rounded px-2.5 py-1 text-xs font-semibold">
                       <option value="EGRESO">EGRESO</option>
                       <option value="INGRESO">INGRESO</option>
                     </select>
                   </div>
-                  <button type="submit"
-                    class="w-full bg-indigo-650 hover:bg-indigo-600 text-white text-xs font-semibold py-1.5 rounded transition">Agregar
-                    Tipo</button>
+                  <button type="submit" class="w-full bg-indigo-650 hover:bg-indigo-600 text-white text-xs font-semibold py-1.5 rounded transition">Agregar Tipo</button>
                 </form>
                 <div class="overflow-y-auto max-h-24 border border-slate-900 rounded-lg">
                   <ul id="listaAdminTipos" class="text-xs divide-y divide-slate-850/50">
@@ -2203,12 +2315,10 @@
                 <form id="formAdminMoneda" class="grid grid-cols-2 gap-2 mb-3">
                   <input type="hidden" id="adminMonedaId">
                   <div class="col-span-2">
-                    <input type="text" id="adminMonedaNombre" placeholder="Nombre (Ej: Guaraní)"
-                      class="w-full glass-input rounded px-2 py-1 text-xs" required>
+                    <input type="text" id="adminMonedaNombre" placeholder="Nombre (Ej: Guaraní)" class="w-full glass-input rounded px-2 py-1 text-xs" required>
                   </div>
                   <div>
-                    <input type="text" id="adminMonedaSiglas" placeholder="Siglas (Ej: PYG)"
-                      class="w-full glass-input rounded px-2 py-1 text-xs" required>
+                    <input type="text" id="adminMonedaSiglas" placeholder="Siglas (Ej: PYG)" class="w-full glass-input rounded px-2 py-1 text-xs" required>
                   </div>
                   <div>
                     <select id="adminMonedaTipo" class="w-full glass-input rounded px-2 py-1 text-xs">
@@ -2225,11 +2335,10 @@
                     </select>
                   </div>
                   <div class="flex items-end">
-                    <button type="submit" id="btnAdminGuardarMoneda"
-                      class="w-full bg-emerald-650 hover:bg-emerald-600 text-white text-xs font-semibold py-1 rounded">Guardar</button>
+                    <button type="submit" id="btnAdminGuardarMoneda" class="w-full bg-emerald-650 hover:bg-emerald-600 text-white text-xs font-semibold py-1 rounded">Guardar</button>
                   </div>
                 </form>
-                <div class="overflow-y-auto max-h-32 border border-slate-900 rounded-lg">
+                <div class="overflow-y-auto max-h-24 border border-slate-900 rounded-lg">
                   <table class="w-full text-left text-xs border-collapse">
                     <thead>
                       <tr class="bg-slate-900 text-slate-500 border-b border-slate-850">
@@ -2247,8 +2356,7 @@
 
               <!-- 3. Gestión de Relaciones de Cambio -->
               <div class="border-t border-slate-800/60 pt-4">
-                <h3 class="font-bold text-slate-350 text-sm border-b border-slate-800/60 pb-2 mb-3">Relaciones de Cambio
-                </h3>
+                <h3 class="font-bold text-slate-350 text-sm border-b border-slate-800/60 pb-2 mb-3">Relaciones de Cambio</h3>
                 <form id="formAdminRelacion" class="flex gap-2 mb-3">
                   <select id="adminRelOrigen" class="w-full glass-input rounded px-2 py-1 text-xs">
                     <!-- Dinámico -->
@@ -2257,23 +2365,86 @@
                   <select id="adminRelDestino" class="w-full glass-input rounded px-2 py-1 text-xs">
                     <!-- Dinámico -->
                   </select>
-                  <button type="submit"
-                    class="bg-indigo-650 hover:bg-indigo-600 text-white text-xs font-semibold px-3 py-1 rounded">Vincular</button>
+                  <button type="submit" class="bg-indigo-650 hover:bg-indigo-600 text-white text-xs font-semibold px-3 py-1 rounded">Vincular</button>
                 </form>
-                <div class="overflow-y-auto max-h-32 border border-slate-900 rounded-lg">
+                <div class="overflow-y-auto max-h-24 border border-slate-900 rounded-lg">
                   <ul id="listaAdminRelaciones" class="text-xs divide-y divide-slate-850/50">
                     <!-- Dinámico -->
                   </ul>
                 </div>
               </div>
-
             </div>
-
           </div>
         </section>
 
       </div>
     </main>
+  </div>
+
+  <!-- Botón Toggle de Calculadora Flotante -->
+  <button id="btnToggleCalculadora" title="Abrir Calculadora"
+    class="fixed bottom-6 right-6 z-50 bg-indigo-600 hover:bg-indigo-500 text-white p-3 rounded-full shadow-2xl transition duration-200 flex items-center justify-center border border-indigo-400/40">
+    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+        d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+    </svg>
+  </button>
+
+  <!-- Calculadora Flotante y Arrastrable -->
+  <div id="floatingCalculator"
+    class="fixed bottom-20 right-6 z-50 w-72 bg-slate-950/95 border border-slate-800 rounded-2xl shadow-2xl p-4 flex flex-col space-y-3 cursor-default hidden select-none">
+    <!-- Cabecera Arrastrable -->
+    <div id="calcHeader" class="flex items-center justify-between cursor-move border-b border-slate-800/80 pb-2">
+      <span class="text-xs font-bold text-slate-400 flex items-center gap-1.5">
+        <svg class="h-3.5 w-3.5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+        </svg>
+        Calculadora Fénix
+      </span>
+      <button id="btnCloseCalculadora" class="text-slate-500 hover:text-slate-400 transition">&times;</button>
+    </div>
+    <!-- Pantalla de Entrada/Resultado -->
+    <div class="relative bg-slate-900 border border-slate-850 rounded-xl p-2 flex flex-col justify-end text-right min-h-[60px] select-text">
+      <div id="calcHistory" class="text-[10px] text-slate-500 font-mono tracking-wider min-h-[14px]"></div>
+      <div class="flex items-center justify-between mt-1">
+        <button id="btnCopyCalc" title="Copiar al portapapeles" class="text-slate-500 hover:text-indigo-400 transition p-1">
+          <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+          </svg>
+        </button>
+        <input type="text" id="calcDisplay" value="0" readonly
+          class="bg-transparent border-none text-slate-100 font-mono text-xl font-bold text-right focus:outline-none w-full cursor-default select-text">
+      </div>
+    </div>
+    <!-- Teclado Numérico y Operadores -->
+    <div class="grid grid-cols-4 gap-2">
+      <!-- Fila 1 -->
+      <button onclick="calcClear()" class="bg-slate-900 hover:bg-slate-850 text-rose-455 font-bold p-2.5 rounded-lg text-sm transition">C</button>
+      <button onclick="calcInput('(')" class="bg-slate-900 hover:bg-slate-850 text-indigo-400 font-bold p-2.5 rounded-lg text-sm transition">(</button>
+      <button onclick="calcInput(')')" class="bg-slate-900 hover:bg-slate-850 text-indigo-400 font-bold p-2.5 rounded-lg text-sm transition">)</button>
+      <button onclick="calcInput('/')" class="bg-indigo-950/40 hover:bg-indigo-900/40 text-indigo-400 font-bold p-2.5 rounded-lg text-sm transition">/</button>
+      <!-- Fila 2 -->
+      <button onclick="calcInput('7')" class="bg-slate-900/40 hover:bg-slate-850 text-slate-200 font-medium p-2.5 rounded-lg text-sm transition">7</button>
+      <button onclick="calcInput('8')" class="bg-slate-900/40 hover:bg-slate-850 text-slate-200 font-medium p-2.5 rounded-lg text-sm transition">8</button>
+      <button onclick="calcInput('9')" class="bg-slate-900/40 hover:bg-slate-850 text-slate-200 font-medium p-2.5 rounded-lg text-sm transition">9</button>
+      <button onclick="calcInput('*')" class="bg-indigo-950/40 hover:bg-indigo-900/40 text-indigo-400 font-bold p-2.5 rounded-lg text-sm transition">*</button>
+      <!-- Fila 3 -->
+      <button onclick="calcInput('4')" class="bg-slate-900/40 hover:bg-slate-850 text-slate-200 font-medium p-2.5 rounded-lg text-sm transition">4</button>
+      <button onclick="calcInput('5')" class="bg-slate-900/40 hover:bg-slate-850 text-slate-200 font-medium p-2.5 rounded-lg text-sm transition">5</button>
+      <button onclick="calcInput('6')" class="bg-slate-900/40 hover:bg-slate-850 text-slate-200 font-medium p-2.5 rounded-lg text-sm transition">6</button>
+      <button onclick="calcInput('-')" class="bg-indigo-950/40 hover:bg-indigo-900/40 text-indigo-400 font-bold p-2.5 rounded-lg text-sm transition">-</button>
+      <!-- Fila 4 -->
+      <button onclick="calcInput('1')" class="bg-slate-900/40 hover:bg-slate-850 text-slate-200 font-medium p-2.5 rounded-lg text-sm transition">1</button>
+      <button onclick="calcInput('2')" class="bg-slate-900/40 hover:bg-slate-850 text-slate-200 font-medium p-2.5 rounded-lg text-sm transition">2</button>
+      <button onclick="calcInput('3')" class="bg-slate-900/40 hover:bg-slate-850 text-slate-200 font-medium p-2.5 rounded-lg text-sm transition">3</button>
+      <button onclick="calcInput('+')" class="bg-indigo-950/40 hover:bg-indigo-900/40 text-indigo-400 font-bold p-2.5 rounded-lg text-sm transition">+</button>
+      <!-- Fila 5 -->
+      <button onclick="calcInput('0')" class="col-span-2 bg-slate-900/40 hover:bg-slate-850 text-slate-200 font-medium p-2.5 rounded-lg text-sm transition">0</button>
+      <button onclick="calcInput('.')" class="bg-slate-900/40 hover:bg-slate-850 text-slate-200 font-medium p-2.5 rounded-lg text-sm transition">.</button>
+      <button onclick="calcEvaluate()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold p-2.5 rounded-lg text-sm transition">=</button>
+    </div>
   </div>
 
   <!-- Script del Controlador Frontend -->

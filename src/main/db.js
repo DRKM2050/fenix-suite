@@ -218,6 +218,15 @@ function ejecutarCreacionTablas() {
       )
     `);
 
+    // 12. Plataformas / Brokers (Nuevo)
+    db.run(`
+      CREATE TABLE IF NOT EXISTS plataformas (
+        id_plataforma INTEGER PRIMARY KEY AUTOINCREMENT,
+        nombre TEXT UNIQUE,
+        status TEXT DEFAULT 'ACTIVO'
+      )
+    `);
+
     // Índices de rendimiento
     db.run('CREATE INDEX IF NOT EXISTS idx_movimientos_fecha ON movimientos(fecha_contable);');
     db.run('CREATE INDEX IF NOT EXISTS idx_cuentas_cliente ON cuentas(id_cliente);');
@@ -229,6 +238,18 @@ function ejecutarCreacionTablas() {
     db.run("ALTER TABLE tipos_transacciones ADD COLUMN categoria TEXT DEFAULT 'EGRESO';", (err) => {});
     db.run("ALTER TABLE ecommerce ADD COLUMN id_producto INTEGER;", (err) => {});
     db.run("ALTER TABLE ecommerce ADD COLUMN cantidad INTEGER DEFAULT 1;", (err) => {});
+    db.run("ALTER TABLE movimientos ADD COLUMN status_operacion TEXT DEFAULT 'LIQUIDADO';", (err) => {});
+    db.run("ALTER TABLE movimientos ADD COLUMN subcategoria_ocasional TEXT;", (err) => {});
+
+    // Asegurar existencia del CLIENTE OCASIONAL (Tipo: OCASIONAL)
+    db.get("SELECT COUNT(*) as count FROM clientes WHERE nombre = 'CLIENTE OCASIONAL'", (err, row) => {
+      if (row && row.count === 0) {
+        db.run(`
+          INSERT INTO clientes (timestamp, nombre, documento, telefono, mail, tipo_cliente, observaciones, status)
+          VALUES (?, 'CLIENTE OCASIONAL', '00000000-0', 'N/A', 'ocasional@fenix.com', 'OCASIONAL', 'Cliente genérico para transacciones rápidas', 'ACTIVO')
+        `, [new Date().toISOString()]);
+      }
+    });
 
     // POBLACIÓN INICIAL AUTOMÁTICA
     db.get("SELECT COUNT(*) as count FROM tipos_transacciones", (err, row) => {

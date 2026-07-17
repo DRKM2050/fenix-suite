@@ -48,6 +48,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   configurarFormularios();
   configurarActualizaciones();
   configurarOnboarding();
+  await configurarAjustesYCalculadora();
 });
 
 // ==========================================
@@ -138,6 +139,10 @@ function limpiarFormularioMovimiento() {
   }
   const seccionEco = document.getElementById('seccionEcommerce');
   if (seccionEco) seccionEco.classList.add('hidden');
+  
+  const subCtaContainer = document.getElementById('movSubcategoriaOcasionalContainer');
+  if (subCtaContainer) subCtaContainer.classList.add('hidden');
+
   const btnCancelar = document.getElementById('btnCancelarMovimiento');
   if (btnCancelar) btnCancelar.classList.add('hidden');
 
@@ -398,7 +403,7 @@ async function cargarListasBase() {
 
   state.clientes.filter(c => c.status === 'ACTIVO').forEach(cli => {
     // Nombre sin parentesis de documento para simplificar
-    const opt = `<option value="${cli.id_cliente}">${cli.nombre}</option>`;
+    const opt = `<option value="${cli.id_cliente}" data-tipo="${cli.tipo_cliente || ''}">${cli.nombre}</option>`;
     selectMovCli.insertAdjacentHTML('beforeend', opt);
     selectFiltroCli.insertAdjacentHTML('beforeend', opt);
   });
@@ -775,7 +780,7 @@ async function cargarHistorialCliente() {
 // ==========================================
 async function refrescarCambios() {
   state.cambios = await window.api.cambios.listar();
-  
+
   // 1. Renderizar la tabla de historial
   const tabla = document.getElementById('tablaCambios');
   if (tabla) {
@@ -801,7 +806,7 @@ async function refrescarCambios() {
   const gridCot = document.getElementById('gridCotizacionesActivas');
   if (gridCot) {
     gridCot.innerHTML = '';
-    
+
     const cotizacionesActivas = {};
     const cambiosOrdenados = [...state.cambios].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
     cambiosOrdenados.forEach(cam => {
@@ -819,16 +824,16 @@ async function refrescarCambios() {
         gridCot.insertAdjacentHTML('beforeend', `
           <div class="p-3 bg-slate-900/60 border border-slate-800/80 rounded-xl flex justify-between items-center hover:bg-slate-900/90 transition shadow-inner">
             <div>
-              <span class="text-[12px] text-slate-400 font-bold block uppercase tracking-wider">${c.par_divisa}</span>
+              <span class="text-[14px] text-slate-400 font-bold block uppercase tracking-wider">${c.par_divisa}</span>
               <div class="flex items-baseline gap-1.5 mt-1">
-                <span class="text-[10px] text-emerald-450 font-semibold">C:</span>
+                <span class="text-[12px] text-emerald-450 font-semibold">C:</span>
                 <span class="text-[13px] font-black text-emerald-400 font-mono">${formatearCotizacion(c.valor_compra)}</span>
-                <span class="text-[10px] text-rose-500 font-semibold ml-1">V:</span>
+                <span class="text-[12px] text-rose-500 font-semibold ml-1">V:</span>
                 <span class="text-[13px] font-black text-rose-455 font-mono">${formatearCotizacion(c.valor_venta)}</span>
               </div>
             </div>
             <div class="text-right">
-              <span class="text-[9px] text-slate-500 italic block mt-0.5">${fechaStr}</span>
+              <span class="text-[12px] text-slate-500 italic block mt-0.5">${fechaStr}</span>
             </div>
           </div>
         `);
@@ -903,9 +908,22 @@ async function refrescarMovimientos(filtros = {}) {
     }
 
     const esIngreso = m.tipo_categoria === 'INGRESO';
+    const esPendiente = m.status_operacion === 'PENDIENTE';
+    const rowClass = esPendiente 
+      ? 'border-b border-slate-900/40 bg-rose-950/10 hover:bg-rose-950/15 border-l-4 border-l-rose-500 transition duration-150' 
+      : 'border-b border-slate-900 hover:bg-slate-900/30 transition duration-150';
+
+    let conceptoHtml = `<div class="font-medium text-slate-300 flex items-center gap-1.5">${m.concepto}`;
+    if (m.subcategoria_ocasional) {
+      conceptoHtml += ` <span class="px-1.5 py-0.5 rounded text-[8px] font-bold bg-indigo-900/40 text-indigo-300 border border-indigo-500/20 uppercase tracking-wider">${m.subcategoria_ocasional}</span>`;
+    }
+    if (esPendiente) {
+      conceptoHtml += ` <span class="px-1.5 py-0.5 rounded text-[8px] font-bold bg-rose-900/40 text-rose-300 border border-rose-500/20 uppercase tracking-wider">Pendiente</span>`;
+    }
+    conceptoHtml += '</div>';
 
     const tr = `
-      <tr class="border-b border-slate-900 hover:bg-slate-900/30">
+      <tr class="${rowClass}">
         <td class="p-3 font-bold text-slate-400">#${m.id_movimiento}</td>
         <td class="p-3">${fechaContableContent}</td>
         <td class="p-3">
@@ -921,11 +939,12 @@ async function refrescarMovimientos(filtros = {}) {
           <div class="text-[9px] text-slate-500" title="Tasa: ${formatearCotizacion(m.valor_cambio)}">Tasa: ${formatearCotizacion(m.valor_cambio)}</div>
         </td>
         <td class="p-3">
-          <div class="font-medium text-slate-300">${m.concepto}</div>
+          ${conceptoHtml}
           ${esEco ? `<div class="text-[10px] text-indigo-400 font-semibold">[Logística] ${m.producto} (${m.cantidad_eco || 1} uds) | Costo original cargado</div>` : ''}
           ${m.observaciones ? `<div class="text-[10px] text-slate-500 italic mt-0.5">${m.observaciones}</div>` : ''}
         </td>
-        <td class="p-3 text-center flex justify-center gap-2">
+        <td class="p-3 text-center flex justify-center items-center gap-2">
+          ${esPendiente ? `<button onclick="liquidarMovimiento(${m.id_movimiento})" class="text-emerald-400 hover:text-emerald-300 text-xs font-semibold mr-1" title="Liquidar / Desmarcar Pendiente">✓ Liquidar</button>` : ''}
           <button onclick="cargarEditarMovimiento(${m.id_movimiento})" class="text-indigo-455 hover:text-indigo-355 text-xs font-semibold">Editar</button>
           <button onclick="eliminarMovimiento(${m.id_movimiento})" class="text-rose-500 hover:text-rose-455 text-xs font-semibold">Eliminar</button>
         </td>
@@ -967,6 +986,19 @@ async function cargarEditarMovimiento(idMovimiento) {
   document.getElementById('movConcepto').value = mov.concepto;
   document.getElementById('movObservaciones').value = mov.observaciones || '';
 
+  // Setear pendiente y subcategoría ocasional
+  document.getElementById('movEsPendiente').checked = (mov.status_operacion === 'PENDIENTE');
+  document.getElementById('movSubcategoriaOcasional').value = mov.subcategoria_ocasional || '';
+  
+  const selectedOpt = document.getElementById('movCliente').options[document.getElementById('movCliente').selectedIndex];
+  const esOcasional = selectedOpt ? (selectedOpt.getAttribute('data-tipo') === 'OCASIONAL' || selectedOpt.text.includes('OCASIONAL')) : false;
+  const subCtaContainer = document.getElementById('movSubcategoriaOcasionalContainer');
+  if (esOcasional) {
+    subCtaContainer.classList.remove('hidden');
+  } else {
+    subCtaContainer.classList.add('hidden');
+  }
+
   // E-commerce seccion
   const seccionEco = document.getElementById('seccionEcommerce');
   if (mov.tipo_transaccion.startsWith('ECOMMERCE')) {
@@ -999,9 +1031,15 @@ async function refrescarEcommerceStock() {
   let cantVenta = 0;
 
   ecoMovs.forEach(m => {
+    if (m.status_operacion === 'PENDIENTE') return;
+    
     let valorUSDT = m.monto;
     if (m.moneda !== state.opciones.moneda_principal) {
-      valorUSDT = m.monto * m.valor_cambio;
+      if (m.moneda === 'PYG' || m.moneda === 'ARS') {
+        valorUSDT = m.monto / m.valor_cambio;
+      } else {
+        valorUSDT = m.monto * m.valor_cambio;
+      }
     }
     if (m.tipo_transaccion === 'ECOMMERCE / COMPRA') {
       volCompra += valorUSDT;
@@ -1050,7 +1088,11 @@ function dibujarTablaEcommerce(movs) {
   movs.forEach(m => {
     let equivalenteUSDT = m.monto;
     if (m.moneda !== state.opciones.moneda_principal) {
-      equivalenteUSDT = m.monto * m.valor_cambio;
+      if (m.moneda === 'PYG' || m.moneda === 'ARS') {
+        equivalenteUSDT = m.monto / m.valor_cambio;
+      } else {
+        equivalenteUSDT = m.monto * m.valor_cambio;
+      }
     }
     const esCompra = m.tipo_transaccion.includes('COMPRA');
     const tr = `
@@ -1343,7 +1385,7 @@ async function compilarReporteContable() {
 // ==========================================
 async function refrescarGastosPersonales() {
   const todos = await window.api.movimientos.listar({});
-  const gastos = todos.filter(m => m.tipo_transaccion === 'GASTO_PERSONAL' || m.tipo_transaccion === 'DEPOSITO_PERSONAL');
+  const gastos = todos.filter(m => (m.tipo_transaccion === 'GASTO_PERSONAL' || m.tipo_transaccion === 'DEPOSITO_PERSONAL') && m.status_operacion !== 'PENDIENTE');
 
   const tbody = document.getElementById('tablaGastosPersonales');
   tbody.innerHTML = '';
@@ -1356,7 +1398,11 @@ async function refrescarGastosPersonales() {
   gastos.forEach(g => {
     let equivalenteUSDT = g.monto;
     if (g.moneda !== state.opciones.moneda_principal) {
-      equivalenteUSDT = g.monto * g.valor_cambio;
+      if (g.moneda === 'PYG' || g.moneda === 'ARS') {
+        equivalenteUSDT = g.monto / g.valor_cambio;
+      } else {
+        equivalenteUSDT = g.monto * g.valor_cambio;
+      }
     }
 
     const esEgreso = g.tipo_transaccion === 'GASTO_PERSONAL';
@@ -1673,6 +1719,17 @@ function configurarFormularios() {
     const idCliente = selectCli.value;
     selectCta.innerHTML = '<option value="">Seleccione...</option>';
 
+    // Mostrar/ocultar Variante Ocasional si el cliente seleccionado es de tipo OCASIONAL
+    const selectedOpt = selectCli.options[selectCli.selectedIndex];
+    const esOcasional = selectedOpt ? (selectedOpt.getAttribute('data-tipo') === 'OCASIONAL' || selectedOpt.text.includes('OCASIONAL')) : false;
+    const subCtaContainer = document.getElementById('movSubcategoriaOcasionalContainer');
+    if (esOcasional) {
+      subCtaContainer.classList.remove('hidden');
+    } else {
+      subCtaContainer.classList.add('hidden');
+      document.getElementById('movSubcategoriaOcasional').value = '';
+    }
+
     if (idCliente) {
       const cuentas = await window.api.cuentas.listar(idCliente);
       const cuentasActivas = cuentas.filter(c => c.status === 'ACTIVO');
@@ -1750,6 +1807,7 @@ function configurarFormularios() {
     }
 
     const cliId = document.getElementById('movCliente').value;
+    const chkPendiente = document.getElementById('movEsPendiente').checked;
     const mData = {
       id_cliente: cliId ? parseInt(cliId) : null,
       id_cuenta: parseInt(document.getElementById('movCuenta').value),
@@ -1760,7 +1818,9 @@ function configurarFormularios() {
       valor_cambio: parseFloat(document.getElementById('movValorCambio').value),
       concepto: document.getElementById('movConcepto').value,
       observaciones: document.getElementById('movObservaciones').value,
-      fecha_contable: state.fechaContableActiva
+      fecha_contable: state.fechaContableActiva,
+      status_operacion: chkPendiente ? 'PENDIENTE' : 'LIQUIDADO',
+      subcategoria_ocasional: document.getElementById('movSubcategoriaOcasional').value || null
     };
 
     let ecoData = null;
@@ -1794,6 +1854,7 @@ function configurarFormularios() {
         await window.api.movimientos.crear(mData, ecoData);
         alert('Movimiento registrado con éxito en base de datos.');
         document.getElementById('formMovimiento').reset();
+        document.getElementById('movSubcategoriaOcasionalContainer').classList.add('hidden');
         seccionEco.classList.add('hidden');
       }
       await refrescarMovimientos();
@@ -1808,6 +1869,7 @@ function configurarFormularios() {
   document.getElementById('btnCancelarMovimiento').addEventListener('click', () => {
     state.editandoMovimientoId = null;
     document.getElementById('formMovimiento').reset();
+    document.getElementById('movSubcategoriaOcasionalContainer').classList.add('hidden');
     seccionEco.classList.add('hidden');
     document.getElementById('btnCancelarMovimiento').classList.add('hidden');
     document.getElementById('btnGuardarMovimiento').textContent = 'Guardar Movimiento';
@@ -2149,23 +2211,33 @@ function configurarFormularios() {
 
   // --- Reporte PDF y Excel en movimientos ---
   document.getElementById('btnExportPDF').addEventListener('click', async () => {
-    const filtros = {
-      fecha_inicio: document.getElementById('filtroFecha').value || null,
-      id_cliente: document.getElementById('filtroCliente').value || null,
-      tipo_transaccion: document.getElementById('filtroTipo').value || null
-    };
-    const path = await window.api.reportes.descargarPDF(filtros);
-    alert(`Reporte PDF guardado en su carpeta de descargas:\n${path}`);
+    try {
+      const filtros = {
+        fecha_inicio: document.getElementById('filtroFecha').value || null,
+        id_cliente: document.getElementById('filtroCliente').value || null,
+        tipo_transaccion: document.getElementById('filtroTipo').value || null
+      };
+      const path = await window.api.reportes.descargarPDF(filtros);
+      alert(`Reporte PDF guardado en su carpeta de descargas:\n${path}`);
+    } catch (err) {
+      console.error('Error al exportar PDF:', err);
+      alert('Error al generar el reporte PDF: ' + err.message);
+    }
   });
 
   document.getElementById('btnExportExcel').addEventListener('click', async () => {
-    const filtros = {
-      fecha_inicio: document.getElementById('filtroFecha').value || null,
-      id_cliente: document.getElementById('filtroCliente').value || null,
-      tipo_transaccion: document.getElementById('filtroTipo').value || null
-    };
-    const path = await window.api.reportes.descargarExcel(filtros);
-    alert(`Reporte Excel guardado en su carpeta de descargas:\n${path}`);
+    try {
+      const filtros = {
+        fecha_inicio: document.getElementById('filtroFecha').value || null,
+        id_cliente: document.getElementById('filtroCliente').value || null,
+        tipo_transaccion: document.getElementById('filtroTipo').value || null
+      };
+      const path = await window.api.reportes.descargarExcel(filtros);
+      alert(`Reporte Excel guardado en su carpeta de descargas:\n${path}`);
+    } catch (err) {
+      console.error('Error al exportar Excel:', err);
+      alert('Error al generar el reporte Excel: ' + err.message);
+    }
   });
 
   // --- Cargar y Editar Datos Empresa (Ajustes de Usuario Modal) ---
@@ -2343,15 +2415,25 @@ function configurarFormularios() {
   document.getElementById('btnGenerarReporte').addEventListener('click', compilarReporteContable);
 
   document.getElementById('btnExportPDFReporte').addEventListener('click', async () => {
-    const filtros = obtenerFiltrosReportes();
-    const path = await window.api.reportes.descargarPDF(filtros);
-    alert(`Reporte PDF generado exitosamente y guardado en descargas:\n${path}`);
+    try {
+      const filtros = obtenerFiltrosReportes();
+      const path = await window.api.reportes.descargarPDF(filtros);
+      alert(`Reporte PDF generado exitosamente y guardado en descargas:\n${path}`);
+    } catch (err) {
+      console.error('Error al generar PDF en módulo reportes:', err);
+      alert('Error al generar reporte PDF: ' + err.message);
+    }
   });
 
   document.getElementById('btnExportExcelReporte').addEventListener('click', async () => {
-    const filtros = obtenerFiltrosReportes();
-    const path = await window.api.reportes.descargarExcel(filtros);
-    alert(`Reporte Excel generado exitosamente y guardado en descargas:\n${path}`);
+    try {
+      const filtros = obtenerFiltrosReportes();
+      const path = await window.api.reportes.descargarExcel(filtros);
+      alert(`Reporte Excel generado exitosamente y guardado en descargas:\n${path}`);
+    } catch (err) {
+      console.error('Error al generar Excel en módulo reportes:', err);
+      alert('Error al generar reporte Excel: ' + err.message);
+    }
   });
 
   // --- Mantenimiento - Backup ---
@@ -2367,6 +2449,57 @@ function configurarFormularios() {
       statusEl.textContent = `Error: ${err.message}`;
     }
   });
+
+  const btnDescargarDB = document.getElementById('btnDescargarDB');
+  const modalBackup = document.getElementById('backupDownloadModal');
+  const formBackup = document.getElementById('backupDownloadForm');
+  const btnCancelBackup = document.getElementById('btnCancelBackupDownload');
+  const passBackup = document.getElementById('backupDownloadPassword');
+
+  if (btnDescargarDB) {
+    btnDescargarDB.addEventListener('click', () => {
+      if (modalBackup) {
+        passBackup.value = '';
+        modalBackup.classList.remove('hidden');
+        passBackup.focus();
+      }
+    });
+  }
+
+  if (btnCancelBackup) {
+    btnCancelBackup.addEventListener('click', () => {
+      if (modalBackup) {
+        modalBackup.classList.add('hidden');
+      }
+    });
+  }
+
+  if (formBackup) {
+    formBackup.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const password = passBackup.value;
+      if (!password) return;
+
+      const valido = await window.api.auth.validarPassword(password);
+      if (valido) {
+        modalBackup.classList.add('hidden');
+        try {
+          const res = await window.api.backup.descargarArchivo();
+          if (res.success) {
+            alert(`Base de datos exportada y guardada con éxito en:\n${res.path}`);
+          } else if (res.cancelled) {
+            console.log('Exportación cancelada por el usuario.');
+          }
+        } catch (err) {
+          alert('Error al descargar base de datos: ' + err.message);
+        }
+      } else {
+        alert('Clave maestra incorrecta. Autorización denegada.');
+        passBackup.value = '';
+        passBackup.focus();
+      }
+    });
+  }
 
   // --- Google Drive Cloud Sync Listeners ---
   document.getElementById('btnDriveConectar').addEventListener('click', async () => {
@@ -2661,7 +2794,16 @@ async function eliminarMovimiento(id) {
   }
 }
 
+async function liquidarMovimiento(id) {
+  if (confirm('¿Desea liquidar esta transacción pendiente y sumarla al balance general?')) {
+    await window.api.movimientos.liquidar(id);
+    await refrescarMovimientos();
+    await actualizarDashboard();
+  }
+}
+
 window.eliminarMovimiento = eliminarMovimiento;
+window.liquidarMovimiento = liquidarMovimiento;
 
 // ==========================================
 // DASHBOARD & RENDIMIENTO DE KPIS
@@ -2699,6 +2841,12 @@ async function actualizarDashboard() {
   const principalMiCtaId = await window.api.opciones.get('cuenta_principal_id') || null;
   const gastosMiCtaId = await window.api.opciones.get('cuenta_gastos_personales_id') || null;
 
+  let pendientesCobrar = 0.0;
+  let pendientesCobrarCant = 0;
+  let pendientesPagar = 0.0;
+  let pendientesPagarCant = 0;
+  const todosPendientes = [];
+
   todos.forEach(m => {
     const esCompra = m.tipo_transaccion.includes('COMPRA') || m.tipo_transaccion === 'GASTO' || m.tipo_transaccion === 'GASTO_PERSONAL';
     const esVenta = m.tipo_transaccion.includes('VENTA');
@@ -2706,19 +2854,26 @@ async function actualizarDashboard() {
 
     let valorUSDT = m.monto;
     if (m.moneda !== state.opciones.moneda_principal) {
-      valorUSDT = m.monto * m.valor_cambio;
+      if (m.moneda === 'PYG' || m.moneda === 'ARS') {
+        valorUSDT = m.monto / m.valor_cambio;
+      } else {
+        valorUSDT = m.monto * m.valor_cambio;
+      }
     }
 
-    let signo = 0;
-    if (esCompra) {
-      signo = -1;
-    } else if (esVenta) {
-      signo = 1;
-    } else if (esAjuste) {
-      signo = 1; // Ajuste suma directo al balance de la cuenta
+    if (m.status_operacion === 'PENDIENTE') {
+      todosPendientes.push(m);
+      if (m.tipo_categoria === 'INGRESO' || esVenta) {
+        pendientesCobrar += valorUSDT;
+        pendientesCobrarCant++;
+      } else {
+        pendientesPagar += valorUSDT;
+        pendientesPagarCant++;
+      }
+      return; // EXCLUIDO de los balances generales activos
     }
 
-    const valorContable = valorUSDT * signo;
+    const valorContable = valorUSDT * signoMovimiento(m.tipo_transaccion);
     balanceGeneral += valorContable;
 
     // Clasificación por tipo de cuenta
@@ -2733,7 +2888,7 @@ async function actualizarDashboard() {
     // Impacto dinámico en los saldos de Mis Cuentas Propias
     // Si la transacción no tiene id_cliente, asumimos que es una operación directa de nuestras cuentas
     if (!m.id_cliente && saldosMisCuentas[m.id_cuenta]) {
-      saldosMisCuentas[m.id_cuenta].saldo += m.monto * signo;
+      saldosMisCuentas[m.id_cuenta].saldo += m.monto * signoMovimiento(m.tipo_transaccion);
     }
 
     // Métricas logísticas E-Commerce
@@ -2761,6 +2916,53 @@ async function actualizarDashboard() {
   document.getElementById('kpiEfectivo').innerHTML = `${formatearNumeroVisual(efectivo)} <span class="text-sm text-indigo-400">${state.opciones.moneda_principal}</span>`;
   document.getElementById('kpiBancos').innerHTML = `${formatearNumeroVisual(bancos)} <span class="text-sm text-indigo-400">${state.opciones.moneda_principal}</span>`;
   document.getElementById('kpiCripto').innerHTML = `${formatearNumeroVisual(cripto)} <span class="text-sm text-indigo-400">${state.opciones.moneda_principal}</span>`;
+
+  // Pintar KPIs de transacciones pendientes
+  document.getElementById('kpiPendientesCobrar').innerHTML = `${formatearNumeroVisual(pendientesCobrar)} <span class="text-sm text-indigo-400">${state.opciones.moneda_principal}</span>`;
+  document.getElementById('kpiPendientesCobrarCant').textContent = `${pendientesCobrarCant} transacciones pendientes de cobro`;
+  document.getElementById('kpiPendientesPagar').innerHTML = `${formatearNumeroVisual(pendientesPagar)} <span class="text-sm text-rose-455">${state.opciones.moneda_principal}</span>`;
+  document.getElementById('kpiPendientesPagarCant').textContent = `${pendientesPagarCant} transacciones pendientes de pago`;
+
+  // Poblar tabla de pendientes prioritarios
+  const panelPendientes = document.getElementById('panelPendientesPrioritarias');
+  const tbodyPendientes = document.getElementById('tablaDashPendientes');
+  tbodyPendientes.innerHTML = '';
+  
+  if (todosPendientes.length === 0) {
+    panelPendientes.classList.add('hidden');
+  } else {
+    panelPendientes.classList.remove('hidden');
+    todosPendientes.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    todosPendientes.forEach(p => {
+      const esIng = p.tipo_categoria === 'INGRESO';
+      const fechaCont = formatearFecha(p.fecha_contable);
+      let varianteText = p.subcategoria_ocasional 
+        ? `<span class="px-1.5 py-0.5 rounded text-[8px] font-bold bg-indigo-900/40 text-indigo-300 border border-indigo-500/20 uppercase tracking-wider">${p.subcategoria_ocasional}</span>` 
+        : '';
+      
+      const tr = `
+        <tr class="hover:bg-rose-950/20 text-xs border-b border-rose-950/20">
+          <td class="p-2.5 font-bold text-slate-400">#${p.id_movimiento}</td>
+          <td class="p-2.5">${fechaCont}</td>
+          <td class="p-2.5">
+            <div class="font-semibold text-slate-200">${p.cliente_nombre || 'N/A'}</div>
+            <div class="text-[9px] text-indigo-400">${p.cuenta_nombre || 'N/A'}</div>
+          </td>
+          <td class="p-2.5">
+            <span class="px-2 py-0.5 rounded text-[9px] font-bold ${esIng ? 'bg-emerald-950 text-emerald-400 border border-emerald-900' : 'bg-rose-955 text-rose-455 border border-rose-900'}">${p.tipo_transaccion}</span>
+          </td>
+          <td class="p-2.5 text-right font-bold ${esIng ? 'text-emerald-450' : 'text-rose-500'}">${esIng ? '+' : '-'}${formatearNumeroMoneda(p.monto, p.moneda)} ${p.moneda}</td>
+          <td class="p-2.5">
+            <div class="font-medium text-slate-350">${p.concepto} ${varianteText}</div>
+          </td>
+          <td class="p-2.5 text-center">
+            <button onclick="liquidarMovimiento(${p.id_movimiento})" class="bg-rose-900/50 hover:bg-rose-800 text-rose-300 font-semibold px-2 py-1 rounded text-[10px] transition border border-rose-700/30">Liquidar</button>
+          </td>
+        </tr>
+      `;
+      tbodyPendientes.insertAdjacentHTML('beforeend', tr);
+    });
+  }
 
   document.getElementById('kpiEcoCompra').textContent = `${formatearNumeroVisual(ecoCompra)} ${state.opciones.moneda_principal}`;
   document.getElementById('kpiEcoVenta').textContent = `${formatearNumeroVisual(ecoVenta)} ${state.opciones.moneda_principal}`;
@@ -2859,7 +3061,9 @@ function dibujarGraficoFinanciero(movimientos) {
 
   const valores = ultimos.map(m => {
     let val = m.monto;
-    if (m.moneda !== state.opciones.moneda_principal) val = m.monto * m.valor_cambio;
+    if (m.moneda !== state.opciones.moneda_principal) {
+      val = (m.moneda === 'PYG' || m.moneda === 'ARS') ? m.monto / m.valor_cambio : m.monto * m.valor_cambio;
+    }
     return val;
   });
 
@@ -2886,7 +3090,9 @@ function dibujarGraficoFinanciero(movimientos) {
   const points = ultimos.map((m, idx) => {
     const x = padding + (chartWidth / (ultimos.length - 1 || 1)) * idx;
     let val = m.monto;
-    if (m.moneda !== state.opciones.moneda_principal) val = m.monto * m.valor_cambio;
+    if (m.moneda !== state.opciones.moneda_principal) {
+      val = (m.moneda === 'PYG' || m.moneda === 'ARS') ? m.monto / m.valor_cambio : m.monto * m.valor_cambio;
+    }
     const y = padding + chartHeight - ((val - minVal) / valRange) * chartHeight;
     return { x, y, label: `#${m.id_movimiento}`, isVenta: m.tipo_transaccion.includes('VENTA') };
   });
@@ -3140,3 +3346,271 @@ async function actualizarOnboardingStatus() {
     console.error('Error al actualizar onboarding:', err);
   }
 }
+
+// ==========================================
+// CONFIGURACIÓN DE AJUSTES Y CALCULADORA FLOTANTE
+// ==========================================
+async function configurarAjustesYCalculadora() {
+  // --- TABS DE AJUSTES ---
+  const btnTabAjustesSistema = document.getElementById('btnTabAjustesSistema');
+  const btnTabAjustesFinancieros = document.getElementById('btnTabAjustesFinancieros');
+  const panelAjustesSistema = document.getElementById('panelAjustesSistema');
+  const panelAjustesFinancieros = document.getElementById('panelAjustesFinancieros');
+
+  if (btnTabAjustesSistema && btnTabAjustesFinancieros) {
+    btnTabAjustesSistema.addEventListener('click', () => {
+      btnTabAjustesSistema.className = "flex-1 px-4 py-2 rounded-lg text-xs font-semibold bg-indigo-600 text-white transition duration-200";
+      btnTabAjustesFinancieros.className = "flex-1 px-4 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 transition duration-200";
+      panelAjustesSistema.classList.remove('hidden');
+      panelAjustesFinancieros.classList.add('hidden');
+    });
+
+    btnTabAjustesFinancieros.addEventListener('click', async () => {
+      btnTabAjustesFinancieros.className = "flex-1 px-4 py-2 rounded-lg text-xs font-semibold bg-indigo-600 text-white transition duration-200";
+      btnTabAjustesSistema.className = "flex-1 px-4 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 transition duration-200";
+      panelAjustesSistema.classList.add('hidden');
+      panelAjustesFinancieros.classList.remove('hidden');
+      await refrescarPlataformas();
+    });
+  }
+
+  // --- SELECTOR MÉTODO DE MÁRGENES / COSTEO ---
+  const selMargen = document.getElementById('selMargenMetodo');
+  const lblMargen = document.getElementById('lblMargenDescripcion');
+  if (selMargen) {
+    const margenMetodo = await window.api.opciones.get('margen_metodo') || 'FIFO';
+    selMargen.value = margenMetodo;
+    const updateMargenDesc = () => {
+      if (selMargen.value === 'FIFO') {
+        lblMargen.textContent = 'FIFO (First-In, First-Out): Los primeros activos en ingresar son los primeros en salir. Recomendado para criptomonedas y contabilidad fiscal tradicional.';
+      } else {
+        lblMargen.textContent = 'CPP (Costo Promedio Ponderado): El costo de salida se calcula promediando el costo total de los activos disponibles. Recomendado para stocks físicos y retail.';
+      }
+    };
+    updateMargenDesc();
+    selMargen.addEventListener('change', async () => {
+      await window.api.opciones.set('margen_metodo', selMargen.value);
+      updateMargenDesc();
+    });
+  }
+
+  // --- COMISIONES DE RED ---
+  const feeUSDTInput = document.getElementById('feeUSDT');
+  const feePYGInput = document.getElementById('feePYG');
+  const btnComisiones = document.getElementById('btnGuardarComisiones');
+
+  if (feeUSDTInput && feePYGInput && btnComisiones) {
+    feeUSDTInput.value = await window.api.opciones.get('fee_red_usdt') || '1.00';
+    feePYGInput.value = await window.api.opciones.get('fee_red_pyg') || '0';
+
+    btnComisiones.addEventListener('click', async () => {
+      const u = feeUSDTInput.value || '1.00';
+      const p = feePYGInput.value || '0';
+      await window.api.opciones.set('fee_red_usdt', u);
+      await window.api.opciones.set('fee_red_pyg', p);
+      alert('Comisiones de red predeterminadas guardadas con éxito.');
+    });
+  }
+
+  // --- TOGGLE DEL WIDGET CAMBIOS CHACO ---
+  const chkChaco = document.getElementById('chkChacoWidget');
+  if (chkChaco) {
+    const chacoWidgetActivo = (await window.api.opciones.get('chaco_widget_visible')) !== 'false';
+    chkChaco.checked = chacoWidgetActivo;
+
+    const actualizarVisibilidadWidget = () => {
+      const widgetPanel = document.querySelector('#view-cambios iframe')?.closest('.glass-panel');
+      if (widgetPanel) {
+        widgetPanel.style.display = chkChaco.checked ? 'flex' : 'none';
+      }
+    };
+
+    // Esperar un momento a que renderice la vista
+    setTimeout(actualizarVisibilidadWidget, 500);
+
+    chkChaco.addEventListener('change', async () => {
+      await window.api.opciones.set('chaco_widget_visible', chkChaco.checked ? 'true' : 'false');
+      actualizarVisibilidadWidget();
+    });
+  }
+
+  // --- CRUD PLATAFORMAS / BROKERS ---
+  const formPlat = document.getElementById('formPlataforma');
+  if (formPlat) {
+    formPlat.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('platNombre').value;
+      if (!name) return;
+      await window.api.plataformas.crear(name);
+      document.getElementById('platNombre').value = '';
+      await refrescarPlataformas();
+    });
+  }
+
+  // --- CALCULADORA FLOTANTE ---
+  const btnToggleCalc = document.getElementById('btnToggleCalculadora');
+  const calcWin = document.getElementById('floatingCalculator');
+  const btnCloseCalc = document.getElementById('btnCloseCalculadora');
+  const calcDisplay = document.getElementById('calcDisplay');
+  const calcHistory = document.getElementById('calcHistory');
+  const btnCopyCalc = document.getElementById('btnCopyCalc');
+
+  if (btnToggleCalc && calcWin) {
+    btnToggleCalc.addEventListener('click', () => {
+      calcWin.classList.toggle('hidden');
+    });
+  }
+  if (btnCloseCalc && calcWin) {
+    btnCloseCalc.addEventListener('click', () => {
+      calcWin.classList.add('hidden');
+    });
+  }
+
+  // Lógica arrastrable
+  const header = document.getElementById('calcHeader');
+  let isDragging = false;
+  let startX, startY, startLeft, startTop;
+
+  if (header && calcWin) {
+    header.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      startLeft = calcWin.offsetLeft;
+      startTop = calcWin.offsetTop;
+      e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      calcWin.style.left = `${startLeft + dx}px`;
+      calcWin.style.top = `${startTop + dy}px`;
+      calcWin.style.bottom = 'auto';
+      calcWin.style.right = 'auto';
+    });
+
+    document.addEventListener('mouseup', () => {
+      isDragging = false;
+    });
+  }
+
+  // Lógica de cálculo
+  let calcState = {
+    expression: '',
+    displayValue: '0',
+    evaluated: false
+  };
+
+  window.calcClear = function() {
+    calcState.expression = '';
+    calcState.displayValue = '0';
+    calcState.evaluated = false;
+    updateCalcUI();
+  };
+
+  window.calcInput = function(char) {
+    if (calcState.evaluated) {
+      if (/[0-9.(]/.test(char)) {
+        calcState.expression = '';
+      } else {
+        calcState.expression = calcState.displayValue;
+      }
+      calcState.evaluated = false;
+    }
+
+    if (calcState.expression === '' && /[0-9(]/.test(char)) {
+      calcState.expression = char;
+    } else {
+      calcState.expression += char;
+    }
+
+    calcState.displayValue = calcState.expression;
+    updateCalcUI();
+  };
+
+  window.calcEvaluate = function() {
+    try {
+      const cleanExpr = calcState.expression.replace(/×/g, '*').replace(/÷/g, '/');
+      const result = new Function(`return (${cleanExpr})`)();
+      calcState.displayValue = Number(parseFloat(result).toFixed(6)).toString();
+      calcState.expression = calcState.displayValue;
+      calcState.evaluated = true;
+    } catch (err) {
+      calcState.displayValue = 'Error';
+      calcState.evaluated = true;
+    }
+    updateCalcUI();
+  };
+
+  function updateCalcUI() {
+    if (calcDisplay) calcDisplay.value = calcState.displayValue;
+    if (calcHistory) calcHistory.textContent = calcState.expression;
+  }
+
+  if (btnCopyCalc) {
+    btnCopyCalc.addEventListener('click', () => {
+      navigator.clipboard.writeText(calcState.displayValue);
+      const tooltip = document.createElement('span');
+      tooltip.textContent = 'Copiado!';
+      tooltip.className = 'absolute -top-6 left-2 bg-indigo-600 text-white font-bold text-[9px] px-1.5 py-0.5 rounded border border-indigo-400 shadow z-50';
+      btnCopyCalc.parentNode.appendChild(tooltip);
+      setTimeout(() => tooltip.remove(), 1000);
+    });
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (calcWin.classList.contains('hidden')) return;
+    if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') {
+      return;
+    }
+
+    const key = e.key;
+    if (/[0-9+\-*/.()]/.test(key)) {
+      window.calcInput(key);
+      e.preventDefault();
+    } else if (key === 'Enter' || key === '=') {
+      window.calcEvaluate();
+      e.preventDefault();
+    } else if (key === 'Backspace') {
+      calcState.expression = calcState.expression.slice(0, -1);
+      calcState.displayValue = calcState.expression || '0';
+      updateCalcUI();
+      e.preventDefault();
+    } else if (key === 'Escape') {
+      window.calcClear();
+      e.preventDefault();
+    }
+  });
+}
+
+async function refrescarPlataformas() {
+  const list = await window.api.plataformas.listar();
+  const tbody = document.getElementById('tablaPlataformas');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  if (list.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="2" class="p-2 text-center text-slate-500 text-[10px]">Sin plataformas registradas.</td></tr>`;
+    return;
+  }
+  list.forEach(p => {
+    tbody.insertAdjacentHTML('beforeend', `
+      <tr class="border-b border-slate-900 text-xs hover:bg-slate-900/10">
+        <td class="p-2 text-slate-300 font-semibold uppercase">${p.nombre}</td>
+        <td class="p-2 text-center">
+          <button onclick="eliminarPlataforma(${p.id_plataforma})" class="text-rose-500 hover:text-rose-455 text-[10px] font-bold">Eliminar</button>
+        </td>
+      </tr>
+    `);
+  });
+}
+window.refrescarPlataformas = refrescarPlataformas;
+
+async function eliminarPlataforma(id) {
+  if (confirm('¿Seguro de eliminar esta plataforma?')) {
+    await window.api.plataformas.eliminar(id);
+    await refrescarPlataformas();
+  }
+}
+window.eliminarPlataforma = eliminarPlataforma;

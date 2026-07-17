@@ -65,9 +65,15 @@ async function generarReportePDF(filtros, movimientos) {
   let totalExpenses = 0.0;
 
   movimientos.forEach(m => {
+    if (m.status_operacion === 'PENDIENTE') return;
+    
     let valorUSDT = m.monto;
     if (m.moneda !== monedaPrincipal) {
-      valorUSDT = m.monto * m.valor_cambio;
+      if (m.moneda === 'PYG' || m.moneda === 'ARS') {
+        valorUSDT = m.monto / m.valor_cambio;
+      } else {
+        valorUSDT = m.monto * m.valor_cambio;
+      }
     }
     if (m.tipo_categoria === 'INGRESO') {
       totalIncomes += valorUSDT;
@@ -313,25 +319,30 @@ async function generarReportePDF(filtros, movimientos) {
         <tbody>
           ${movimientos.map(m => {
             const esIngreso = m.tipo_categoria === 'INGRESO';
+            const esPendiente = m.status_operacion === 'PENDIENTE';
             let valorEquiv = m.monto;
             if (m.moneda !== monedaPrincipal) {
-              valorEquiv = m.monto * m.valor_cambio;
+              if (m.moneda === 'PYG' || m.moneda === 'ARS') {
+                valorEquiv = m.monto / m.valor_cambio;
+              } else {
+                valorEquiv = m.monto * m.valor_cambio;
+              }
             }
 
             const docCliente = m.cliente_documento ? `(RUC: ${m.cliente_documento})` : '(N/A)';
             const cliInfo = m.cliente_nombre ? `${m.cliente_nombre} <br><span style="font-size:9px; color:#64748b;">${docCliente}</span>` : 'Fondo Corporativo / Socios';
 
             return `
-              <tr>
+              <tr style="${esPendiente ? 'background-color:#fff5f5;' : ''}">
                 <td class="font-mono" style="font-weight: 600;">#${m.id_movimiento}</td>
                 <td>${formatearFechaPDF(m.fecha_contable)}</td>
                 <td>${cliInfo}</td>
                 <td style="font-weight: 500;">${m.cuenta_nombre || '--'}</td>
                 <td>
-                  <span class="badge ${esIngreso ? 'badge-income' : 'badge-expense'}">${m.tipo_transaccion}</span>
+                  ${esPendiente ? '<span class="badge" style="background:#fee2e2; color:#991b1b; font-size:8px; border:1px solid #fca5a5; margin-right:3px;">PENDIENTE</span>' : ''}<span class="badge ${esIngreso ? 'badge-income' : 'badge-expense'}">${m.tipo_transaccion}</span>
                 </td>
                 <td>
-                  <div style="font-weight: 600;">${m.concepto}</div>
+                  <div style="font-weight: 600;">${m.concepto} ${m.subcategoria_ocasional ? `<span style="font-size:8px; background:#e0e7ff; color:#4338ca; padding:1px 3px; border-radius:3px; font-weight:bold;">${m.subcategoria_ocasional}</span>` : ''}</div>
                   ${m.producto_nombre ? `<div style="font-size: 9px; color:#4f46e5; margin-top:2px;">[Eco] ${m.producto_nombre} (${m.cantidad_eco} unid)</div>` : ''}
                 </td>
                 <td class="text-right font-mono" style="font-weight:600;">${formatearNumeroPDF(m.monto)} ${m.moneda}</td>
@@ -604,7 +615,7 @@ function generarReporteExcel(filtros, movimientos) {
   const fullPath = path.join(downloadsPath, fileName);
 
   let csvContent = '\uFEFF';
-  csvContent += 'ID Movimiento\tFecha Contable\tCliente\tRUC Cliente\tCuenta\tTipo Transaccion\tCategoria\tMonto Original\tMoneda\tPar Cambio\tValor Tasa\tConcepto\tObservaciones\tID Producto\tProducto\tCantidad\tMonto Costo\tMoneda Costo\tCambio Costo\n';
+  csvContent += 'ID Movimiento\tFecha Contable\tCliente\tRUC Cliente\tCuenta\tTipo Transaccion\tCategoria\tMonto Original\tMoneda\tPar Cambio\tValor Tasa\tConcepto\tObservaciones\tID Producto\tProducto\tCantidad\tMonto Costo\tMoneda Costo\tCambio Costo\tEstado Operacion\tSubcategoria Ocasional\n';
 
   movimientos.forEach(m => {
     csvContent += `${m.id_movimiento}\t`;
@@ -625,7 +636,9 @@ function generarReporteExcel(filtros, movimientos) {
     csvContent += `${m.cantidad_eco || 1}\t`;
     csvContent += `${m.producto_costo_monto || ''}\t`;
     csvContent += `${m.producto_costo_moneda || ''}\t`;
-    csvContent += `${m.producto_costo_cambio || ''}\n`;
+    csvContent += `${m.producto_costo_cambio || ''}\t`;
+    csvContent += `${m.status_operacion || 'LIQUIDADO'}\t`;
+    csvContent += `${m.subcategoria_ocasional || ''}\n`;
   });
 
   fs.writeFileSync(fullPath, csvContent, 'utf-8');
