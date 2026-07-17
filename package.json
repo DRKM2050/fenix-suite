@@ -1,6 +1,6 @@
 {
   "name": "fnx-admin",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Plataforma administrativa, transaccional y financiera multi-moneda",
   "main": "src/main/main.js",
   "scripts": {
