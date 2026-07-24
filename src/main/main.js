@@ -370,8 +370,47 @@ ipcMain.handle('db:movimientos-crear', async (event, rawMovimiento, rawEcommerce
   return new Promise((resolve, reject) => {
     db.dbRun('BEGIN TRANSACTION;')
       .then(async () => {
-        const idMov = await db.registrarMovimientoTransaccional(movimiento, ecommerce);
+        const sqlMov = `
+          INSERT INTO movimientos (
+            id_cliente, id_cuenta, tipo_transaccion, monto, moneda, 
+            par_cambio, modalidad_cambio, valor_cambio, concepto, 
+            observaciones, fecha_contable, status_operacion, timestamp
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+        const resMov = await db.dbRun(sqlMov, [
+          movimiento.id_cliente || null,
+          movimiento.id_cuenta,
+          movimiento.tipo_transaccion,
+          movimiento.monto,
+          movimiento.moneda,
+          movimiento.par_cambio || null,
+          movimiento.modalidad_cambio || 'FIJO',
+          movimiento.valor_cambio || 1.0,
+          movimiento.concepto,
+          movimiento.observaciones,
+          movimiento.fecha_contable,
+          movimiento.status_operacion || 'COMPLETADO',
+          new Date().toISOString()
+        ]);
+        const idMov = resMov.lastID;
+
         if (movimiento.tipo_transaccion.startsWith('ECOMMERCE') && ecommerce) {
+          const sqlEco = `
+            INSERT INTO ecommerce (
+              id_movimiento, id_producto, producto, monto, moneda, cambio_aplicado, cantidad, timestamp
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          `;
+          await db.dbRun(sqlEco, [
+            idMov,
+            ecommerce.id_producto || null,
+            ecommerce.producto,
+            ecommerce.monto,
+            ecommerce.moneda,
+            ecommerce.cambio_aplicado,
+            ecommerce.cantidad || 1,
+            new Date().toISOString()
+          ]);
+
           const idProd = ecommerce.id_producto;
           const cant = parseInt(ecommerce.cantidad) || 1;
           if (movimiento.tipo_transaccion === 'ECOMMERCE / COMPRA') {
@@ -392,8 +431,11 @@ ipcMain.handle('db:movimientos-crear', async (event, rawMovimiento, rawEcommerce
         resolve(idMov);
       })
       .catch(err => {
-        db.dbRun('ROLLBACK;');
-        reject(err);
+        db.dbRun('ROLLBACK;')
+          .catch(() => {})
+          .finally(() => {
+            reject(err);
+          });
       });
   });
 });

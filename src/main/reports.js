@@ -21,6 +21,28 @@ function formatearNumeroPDF(numero) {
   return parts.join(',');
 }
 
+function calcularEquivalenteUSDT(monto, moneda, valorCambio, parCambio, monedaPrincipal) {
+  if (moneda === monedaPrincipal) {
+    return monto;
+  }
+  const rate = parseFloat(valorCambio) || 1.0;
+  if (rate === 0) return 0;
+  
+  if (parCambio) {
+    if (parCambio.startsWith(`${monedaPrincipal}/`)) {
+      return monto / rate;
+    } else if (parCambio.endsWith(`/${monedaPrincipal}`)) {
+      return monto * rate;
+    }
+  }
+  
+  if (rate >= 10.0) {
+    return monto / rate;
+  } else {
+    return monto * rate;
+  }
+}
+
 // Helper para obtener imagen del logo en base64
 function obtenerLogoBase64() {
   const posiblesNombres = ['logo-rep.png', 'logo-rep.jpg', 'logo.png', 'logofnx.png'];
@@ -67,14 +89,7 @@ async function generarReportePDF(filtros, movimientos) {
   movimientos.forEach(m => {
     if (m.status_operacion === 'PENDIENTE') return;
     
-    let valorUSDT = m.monto;
-    if (m.moneda !== monedaPrincipal) {
-      if (m.moneda === 'PYG' || m.moneda === 'ARS') {
-        valorUSDT = m.monto / m.valor_cambio;
-      } else {
-        valorUSDT = m.monto * m.valor_cambio;
-      }
-    }
+    let valorUSDT = calcularEquivalenteUSDT(m.monto, m.moneda, m.valor_cambio, m.par_cambio, monedaPrincipal);
     if (m.tipo_categoria === 'INGRESO') {
       totalIncomes += valorUSDT;
     } else {
@@ -320,14 +335,7 @@ async function generarReportePDF(filtros, movimientos) {
           ${movimientos.map(m => {
             const esIngreso = m.tipo_categoria === 'INGRESO';
             const esPendiente = m.status_operacion === 'PENDIENTE';
-            let valorEquiv = m.monto;
-            if (m.moneda !== monedaPrincipal) {
-              if (m.moneda === 'PYG' || m.moneda === 'ARS') {
-                valorEquiv = m.monto / m.valor_cambio;
-              } else {
-                valorEquiv = m.monto * m.valor_cambio;
-              }
-            }
+            let valorEquiv = calcularEquivalenteUSDT(m.monto, m.moneda, m.valor_cambio, m.par_cambio, monedaPrincipal);
 
             const docCliente = m.cliente_documento ? `(RUC: ${m.cliente_documento})` : '(N/A)';
             const cliInfo = m.cliente_nombre ? `${m.cliente_nombre} <br><span style="font-size:9px; color:#64748b;">${docCliente}</span>` : 'Fondo Corporativo / Socios';

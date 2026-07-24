@@ -1116,6 +1116,12 @@
                 </button>
               </div>
               <form id="formMovimiento" class="space-y-4">
+                <!-- Fecha Contable -->
+                <div>
+                  <label class="block text-xs text-slate-400 font-semibold mb-1">Fecha Contable *</label>
+                  <input type="date" id="movFechaContable" class="w-full glass-input rounded-lg px-3 py-2 text-sm text-indigo-400 font-semibold" required>
+                </div>
+
                 <!-- Cliente -->
                 <div>
                   <label class="block text-xs text-slate-400 font-semibold mb-1">Cliente *</label>
@@ -1369,6 +1375,11 @@
               <form id="formCambio" class="space-y-4 flex-1 flex flex-col justify-between">
                 <input type="hidden" id="cambioId">
                 <div class="space-y-4">
+                  <!-- Fecha Contable -->
+                  <div>
+                    <label class="block text-xs text-slate-400 font-semibold mb-1">Fecha Contable *</label>
+                    <input type="date" id="cambioFechaContable" class="w-full glass-input rounded-lg px-3 py-2 text-sm text-indigo-400 font-semibold" required>
+                  </div>
                   <div>
                     <label class="block text-xs text-slate-400 font-semibold mb-1">Par de Divisa *</label>
                     <select id="cambioPar" class="w-full glass-input rounded-lg px-3 py-2.5 text-sm" required>
@@ -1569,6 +1580,9 @@
                     <button type="button" id="btnCargarImagenEco" class="bg-indigo-650/40 hover:bg-indigo-600/50 text-indigo-400 text-xs font-semibold px-3 py-2 rounded-lg transition border border-indigo-500/20">
                       Examinar...
                     </button>
+                    <button type="button" id="btnBuscarImagenIAEco" onclick="buscarImagenIA('product_form')" class="bg-violet-650/40 hover:bg-violet-600/50 text-violet-400 text-xs font-semibold px-3 py-2 rounded-lg transition border border-violet-500/20">
+                      🤖 Buscar con IA
+                    </button>
                   </div>
                   <div id="ecoProductoImagenPreviewContainer" class="mt-2 hidden">
                     <img id="ecoProductoImagenPreview" src="" class="h-16 w-auto rounded border border-slate-800 object-contain bg-slate-900/60 p-1">
@@ -1594,9 +1608,18 @@
 
             <!-- Tabla de Inventario de Productos -->
             <div class="glass-panel lg:col-span-2 p-6 rounded-2xl flex flex-col space-y-4">
-              <div class="flex justify-between items-center border-b border-slate-800/60 pb-2">
+              <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-800/60 pb-2">
                 <h3 class="font-bold text-slate-350 text-md">Inventario y Catálogo General</h3>
-                <div class="flex gap-2">
+                <div class="flex flex-wrap items-center gap-2">
+                  <!-- Filtros del catálogo -->
+                  <input type="text" id="filtroInventarioBusqueda" placeholder="Buscar por Nombre/SKU..."
+                    class="glass-input rounded-lg px-2.5 py-1.5 text-xs w-44 bg-slate-900 border-slate-800/80 text-slate-200">
+                  <select id="filtroInventarioOferta" class="glass-input rounded-lg px-2 py-1.5 text-xs bg-slate-900 border-slate-800/80 text-slate-400 font-semibold">
+                    <option value="">Todos los Productos</option>
+                    <option value="oferta">Solo Ofertas</option>
+                    <option value="con_stock">Solo Con Stock</option>
+                    <option value="seleccionados">Solo Seleccionados</option>
+                  </select>
                   <button id="btnDescargarCatalogoPDF"
                     class="bg-rose-700 hover:bg-rose-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition flex items-center gap-1">
                     <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1946,6 +1969,12 @@
                 Registrar Gasto</h3>
               <form id="formGastoPersonal" class="space-y-4">
                 <input type="hidden" id="gastoId">
+
+                <!-- Fecha Contable -->
+                <div>
+                  <label class="block text-xs text-slate-400 font-semibold mb-1">Fecha Contable *</label>
+                  <input type="date" id="gastoFechaContable" class="w-full glass-input rounded-lg px-3 py-2 text-sm text-indigo-400 font-semibold" required>
+                </div>
 
                 <div>
                   <label class="block text-xs text-slate-400 font-semibold mb-1">Tipo de Operación *</label>
@@ -2504,10 +2533,10 @@
           class="bg-transparent border-none text-slate-100 font-mono text-xl font-bold text-right focus:outline-none w-full cursor-default select-text">
       </div>
     </div>
-    <!-- Teclado Numérico y Operadores -->
-    <div class="grid grid-cols-4 gap-2">
+    <div class="grid grid-cols-5 gap-2">
       <!-- Fila 1 -->
       <button onclick="calcClear()" class="bg-slate-900 hover:bg-slate-850 text-rose-455 font-bold p-2.5 rounded-lg text-sm transition">C</button>
+      <button onclick="calcBackspace()" class="bg-slate-900 hover:bg-slate-850 text-indigo-400 font-bold p-2.5 rounded-lg text-sm transition">⌫</button>
       <button onclick="calcInput('(')" class="bg-slate-900 hover:bg-slate-850 text-indigo-400 font-bold p-2.5 rounded-lg text-sm transition">(</button>
       <button onclick="calcInput(')')" class="bg-slate-900 hover:bg-slate-850 text-indigo-400 font-bold p-2.5 rounded-lg text-sm transition">)</button>
       <button onclick="calcInput('/')" class="bg-indigo-950/40 hover:bg-indigo-900/40 text-indigo-400 font-bold p-2.5 rounded-lg text-sm transition">/</button>
@@ -2515,21 +2544,22 @@
       <button onclick="calcInput('7')" class="bg-slate-900/40 hover:bg-slate-850 text-slate-200 font-medium p-2.5 rounded-lg text-sm transition">7</button>
       <button onclick="calcInput('8')" class="bg-slate-900/40 hover:bg-slate-850 text-slate-200 font-medium p-2.5 rounded-lg text-sm transition">8</button>
       <button onclick="calcInput('9')" class="bg-slate-900/40 hover:bg-slate-850 text-slate-200 font-medium p-2.5 rounded-lg text-sm transition">9</button>
+      <button onclick="calcPercentage()" class="bg-indigo-950/40 hover:bg-indigo-900/40 text-indigo-400 font-bold p-2.5 rounded-lg text-sm transition">%</button>
       <button onclick="calcInput('*')" class="bg-indigo-950/40 hover:bg-indigo-900/40 text-indigo-400 font-bold p-2.5 rounded-lg text-sm transition">*</button>
       <!-- Fila 3 -->
       <button onclick="calcInput('4')" class="bg-slate-900/40 hover:bg-slate-850 text-slate-200 font-medium p-2.5 rounded-lg text-sm transition">4</button>
       <button onclick="calcInput('5')" class="bg-slate-900/40 hover:bg-slate-850 text-slate-200 font-medium p-2.5 rounded-lg text-sm transition">5</button>
       <button onclick="calcInput('6')" class="bg-slate-900/40 hover:bg-slate-850 text-slate-200 font-medium p-2.5 rounded-lg text-sm transition">6</button>
       <button onclick="calcInput('-')" class="bg-indigo-950/40 hover:bg-indigo-900/40 text-indigo-400 font-bold p-2.5 rounded-lg text-sm transition">-</button>
+      <button onclick="calcInput('+')" class="bg-indigo-950/40 hover:bg-indigo-900/40 text-indigo-400 font-bold p-2.5 rounded-lg text-sm transition">+</button>
       <!-- Fila 4 -->
       <button onclick="calcInput('1')" class="bg-slate-900/40 hover:bg-slate-850 text-slate-200 font-medium p-2.5 rounded-lg text-sm transition">1</button>
       <button onclick="calcInput('2')" class="bg-slate-900/40 hover:bg-slate-850 text-slate-200 font-medium p-2.5 rounded-lg text-sm transition">2</button>
       <button onclick="calcInput('3')" class="bg-slate-900/40 hover:bg-slate-850 text-slate-200 font-medium p-2.5 rounded-lg text-sm transition">3</button>
-      <button onclick="calcInput('+')" class="bg-indigo-950/40 hover:bg-indigo-900/40 text-indigo-400 font-bold p-2.5 rounded-lg text-sm transition">+</button>
-      <!-- Fila 5 -->
-      <button onclick="calcInput('0')" class="col-span-2 bg-slate-900/40 hover:bg-slate-850 text-slate-200 font-medium p-2.5 rounded-lg text-sm transition">0</button>
+      <button onclick="calcInput('0')" class="bg-slate-900/40 hover:bg-slate-850 text-slate-200 font-medium p-2.5 rounded-lg text-sm transition">0</button>
       <button onclick="calcInput('.')" class="bg-slate-900/40 hover:bg-slate-850 text-slate-200 font-medium p-2.5 rounded-lg text-sm transition">.</button>
-      <button onclick="calcEvaluate()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold p-2.5 rounded-lg text-sm transition">=</button>
+      <!-- Fila 5 -->
+      <button onclick="calcEvaluate()" class="col-span-5 bg-indigo-650 hover:bg-indigo-600 text-white font-bold p-2 rounded-lg text-sm transition">=</button>
     </div>
   </div>
 

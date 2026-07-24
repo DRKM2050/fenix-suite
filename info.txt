@@ -7,4 +7,17 @@ npm run build-all
 # Para subir tus actualizaciones a GitHub
 npm run git-release
 
-- Quizas sea momento de separar los componentes del módulo de ajustes para ordenar y presentar mejor los paneles. Existen dos grupos aqui, el de los ajustes del sistema propiamiente (ajustes del sistema, sincronizacion en la nube, y el de ajustes finacieros o administrativos
+
+NEW release
+
+# Sincroniza primero el cambio de versión en tu repositorio remoto
+git push origin main
+
+# Genera la compilación para Windows y la sube automáticamente como Draft a GitHub
+export GH_TOKEN=tu-token-de-git-aqui
+npm run release-win
+
+# Para subir tus actualizaciones a GitHub
+# Para subir tus actualizaciones a GitHub
+export GH_TOKEN=tu-token-de-git-aqui
+npm run git-release

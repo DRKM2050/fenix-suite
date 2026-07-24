@@ -306,6 +306,54 @@ function mostrarNotificacionDescarga(filePath) {
 window.mostrarNotificacionDescarga = mostrarNotificacionDescarga;
 
 // ==========================================
+// UTILERÍAS TRANSACCIONALES Y COTIZACIONES
+// ==========================================
+function signoMovimiento(tipo) {
+  const t = state.tiposTransaccion.find(item => item.nombre === tipo);
+  if (t) {
+    return t.categoria === 'INGRESO' ? 1 : -1;
+  }
+  
+  // Fallbacks si no se encuentra en la base de datos
+  const tipoUpper = tipo.toUpperCase();
+  if (tipoUpper.includes('VENTA') || tipoUpper.includes('DEPOSITO') || tipoUpper.includes('COBRO') || tipoUpper.includes('INGRESO')) {
+    return 1;
+  }
+  return -1; // Compras, gastos, retiros, etc.
+}
+window.signoMovimiento = signoMovimiento;
+
+function calcularMontoEquivalenteUSDT(monto, moneda, valorCambio, parCambio) {
+  const principal = state.opciones.moneda_principal || 'USDT';
+  if (moneda === principal) {
+    return monto;
+  }
+  const rate = parseFloat(valorCambio) || 1.0;
+  if (rate === 0) return 0;
+
+  // Si tenemos el par de cambio registrado, nos guiamos por su dirección
+  if (parCambio) {
+    if (parCambio.startsWith(`${principal}/`)) {
+      // Ejemplo: USDT/PYG = 7500 -> dividimos
+      return monto / rate;
+    } else if (parCambio.endsWith(`/${principal}`)) {
+      // Ejemplo: PYG/USDT = 0.000133 -> multiplicamos
+      return monto * rate;
+    }
+  }
+
+  // Si no hay par o es indeterminado, nos guiamos por el valor de la tasa
+  if (rate >= 10.0) {
+    // Ejemplo: 7500 (Guaraníes) o 1000 (Pesos) -> dividimos
+    return monto / rate;
+  } else {
+    // Ejemplo: 0.000133 o 1.02 -> multiplicamos
+    return monto * rate;
+  }
+}
+window.calcularMontoEquivalenteUSDT = calcularMontoEquivalenteUSDT;
+
+// ==========================================
 // CONFIGURACIÓN DE FORMATO DECIMAL / MILES
 // ==========================================
 function formatearNumeroVisual(numero) {
@@ -356,8 +404,8 @@ function formatearCotizacion(numero) {
 // SECCIÓN JORNADA CONTABLE (FECHA COMERCIAL)
 // ==========================================
 async function cargarFechaContable() {
-  const fecha = await window.api.operaciones.getFechaContable();
-  state.fechaContableActiva = fecha;
+  const hoy = new Date().toISOString().split('T')[0];
+  state.fechaContableActiva = hoy;
 
   const badgeColor = document.getElementById('contableBadgeColor');
   const badgeText = document.getElementById('contableBadgeText');
@@ -366,20 +414,20 @@ async function cargarFechaContable() {
   const btnIniciar = document.getElementById('btnIniciarOperaciones');
   const btnCerrar = document.getElementById('btnCerrarOperaciones');
 
-  if (fecha) {
-    badgeColor.className = 'h-3 w-3 rounded-full bg-emerald-500';
-    badgeText.textContent = 'JORNADA ABIERTA';
-    dateWrapper.classList.remove('hidden');
-    dateVal.textContent = formatearFecha(fecha);
-    btnIniciar.classList.add('hidden');
-    btnCerrar.classList.remove('hidden');
-  } else {
-    badgeColor.className = 'h-3 w-3 rounded-full bg-rose-500';
-    badgeText.textContent = 'JORNADA CERRADA';
-    dateWrapper.classList.add('hidden');
-    btnIniciar.classList.remove('hidden');
-    btnCerrar.classList.add('hidden');
-  }
+  if (badgeColor) badgeColor.className = 'h-3 w-3 rounded-full bg-emerald-500 animate-pulse';
+  if (badgeText) badgeText.textContent = 'SISTEMA ACTIVO';
+  if (dateWrapper) dateWrapper.classList.remove('hidden');
+  if (dateVal) dateVal.textContent = formatearFecha(hoy);
+  if (btnIniciar) btnIniciar.classList.add('hidden');
+  if (btnCerrar) btnCerrar.classList.add('hidden');
+
+  // Pre-cargar los campos de fecha
+  const inputMovFecha = document.getElementById('movFechaContable');
+  const inputGastoFecha = document.getElementById('gastoFechaContable');
+  const inputCambioFecha = document.getElementById('cambioFechaContable');
+  if (inputMovFecha && !inputMovFecha.value) inputMovFecha.value = hoy;
+  if (inputGastoFecha && !inputGastoFecha.value) inputGastoFecha.value = hoy;
+  if (inputCambioFecha && !inputCambioFecha.value) inputCambioFecha.value = hoy;
 }
 
 function configurarJornadaContable() {
@@ -808,10 +856,7 @@ async function cargarHistorialCliente() {
   }
 
   movimientos.forEach(m => {
-    let valorUSDT = m.monto;
-    if (m.moneda !== state.opciones.moneda_principal) {
-      valorUSDT = m.monto * m.valor_cambio;
-    }
+    let valorUSDT = calcularMontoEquivalenteUSDT(m.monto, m.moneda, m.valor_cambio, m.par_cambio);
 
     if (m.tipo_transaccion.includes('COMPRA') || m.tipo_transaccion.includes('GASTO')) {
       totalCompras += valorUSDT;
@@ -852,14 +897,19 @@ async function refrescarCambios() {
   if (tabla) {
     tabla.innerHTML = '';
     state.cambios.forEach(cam => {
+      const isInv = cam.par_divisa.startsWith('PYG/') || cam.par_divisa.startsWith('ARS/') || cam.valor_compra < 1.0;
+      const compraVis = isInv ? (1.0 / cam.valor_compra) : cam.valor_compra;
+      const ventaVis = isInv ? (1.0 / cam.valor_venta) : cam.valor_venta;
+      const displayLabel = isInv ? `${cam.par_divisa} (Inv)` : cam.par_divisa;
+
       const tr = `
         <tr class="border-b border-slate-900 hover:bg-slate-900/20">
           <td class="p-2">${formatearFecha(cam.fecha_contable)}</td>
-          <td class="p-2 font-bold text-indigo-400 text-xs">${cam.par_divisa}</td>
-          <td class="p-2 text-right text-emerald-455 font-semibold font-mono">${formatearCotizacion(cam.valor_compra)}</td>
-          <td class="p-2 text-right text-rose-500 font-semibold font-mono">${formatearCotizacion(cam.valor_venta)}</td>
+          <td class="p-2 font-bold text-indigo-400 text-xs">${displayLabel}</td>
+          <td class="p-2 text-right text-emerald-455 font-semibold font-mono">${formatearCotizacion(compraVis)}</td>
+          <td class="p-2 text-right text-rose-500 font-semibold font-mono">${formatearCotizacion(ventaVis)}</td>
           <td class="p-2 text-center">
-            <button onclick="cargarEditarCambio(${cam.id_cambio}, '${cam.par_divisa}', ${cam.valor_compra}, ${cam.valor_venta})" class="text-indigo-400 hover:text-indigo-300 text-[10px] mr-1.5">Editar</button>
+            <button onclick="cargarEditarCambio(${cam.id_cambio}, '${cam.par_divisa}', ${cam.valor_compra}, ${cam.valor_venta}, '${cam.fecha_contable}')" class="text-indigo-400 hover:text-indigo-300 text-[10px] mr-1.5">Editar</button>
             <button onclick="eliminarCambio(${cam.id_cambio})" class="text-rose-500 hover:text-rose-455 text-[10px]">Borrar</button>
           </td>
         </tr>
@@ -886,16 +936,21 @@ async function refrescarCambios() {
       gridCot.innerHTML = `<div class="p-3 text-center text-xs text-slate-500 bg-slate-900/40 rounded-xl">Sin cotizaciones cargadas.</div>`;
     } else {
       paresRegistrados.forEach(c => {
+        const isInv = c.par_divisa.startsWith('PYG/') || c.par_divisa.startsWith('ARS/') || c.valor_compra < 1.0;
+        const compraVis = isInv ? (1.0 / c.valor_compra) : c.valor_compra;
+        const ventaVis = isInv ? (1.0 / c.valor_venta) : c.valor_venta;
+        const displayLabel = isInv ? `${c.par_divisa} (Inv)` : c.par_divisa;
+
         const fechaStr = new Date(c.timestamp).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
         gridCot.insertAdjacentHTML('beforeend', `
           <div class="p-3 bg-slate-900/60 border border-slate-800/80 rounded-xl flex justify-between items-center hover:bg-slate-900/90 transition shadow-inner">
             <div>
-              <span class="text-[14px] text-slate-400 font-bold block uppercase tracking-wider">${c.par_divisa}</span>
+              <span class="text-[14px] text-slate-400 font-bold block uppercase tracking-wider">${displayLabel}</span>
               <div class="flex items-baseline gap-1.5 mt-1">
                 <span class="text-[12px] text-emerald-450 font-semibold">C:</span>
-                <span class="text-[13px] font-black text-emerald-400 font-mono">${formatearCotizacion(c.valor_compra)}</span>
+                <span class="text-[13px] font-black text-emerald-400 font-mono">${formatearCotizacion(compraVis)}</span>
                 <span class="text-[12px] text-rose-500 font-semibold ml-1">V:</span>
-                <span class="text-[13px] font-black text-rose-455 font-mono">${formatearCotizacion(c.valor_venta)}</span>
+                <span class="text-[13px] font-black text-rose-455 font-mono">${formatearCotizacion(ventaVis)}</span>
               </div>
             </div>
             <div class="text-right">
@@ -908,11 +963,17 @@ async function refrescarCambios() {
   }
 }
 
-function cargarEditarCambio(id, par, compra, venta) {
+function cargarEditarCambio(id, par, compra, venta, fecha) {
   document.getElementById('cambioId').value = id;
   document.getElementById('cambioPar').value = par;
-  document.getElementById('cambioCompra').value = compra;
-  document.getElementById('cambioVenta').value = venta;
+
+  const isInv = par.startsWith('PYG/') || par.startsWith('ARS/') || compra < 1.0;
+  const compraVis = isInv ? (1.0 / compra) : compra;
+  const ventaVis = isInv ? (1.0 / venta) : venta;
+
+  document.getElementById('cambioCompra').value = compraVis;
+  document.getElementById('cambioVenta').value = ventaVis;
+  document.getElementById('cambioFechaContable').value = fecha || '';
   document.getElementById('btnCancelarCambio').classList.remove('hidden');
   document.getElementById('btnGuardarCambio').textContent = 'Actualizar';
 }
@@ -1002,7 +1063,7 @@ async function refrescarMovimientos(filtros = {}) {
         </td>
         <td class="p-3 text-right whitespace-nowrap truncate max-w-[150px]" title="${esIngreso ? '+' : '-'}${formatearNumeroMoneda(m.monto, m.moneda)} ${m.moneda}">
           <div class="font-bold ${esIngreso ? 'text-emerald-450' : 'text-rose-500'}">${esIngreso ? '+' : '-'}${formatearNumeroMoneda(m.monto, m.moneda)} ${m.moneda}</div>
-          <div class="text-[9px] text-slate-500" title="Tasa: ${formatearCotizacion(m.valor_cambio)}">Tasa: ${formatearCotizacion(m.valor_cambio)}</div>
+          <div class="text-[9px] text-slate-500" title="Tasa original: ${formatearCotizacion(m.valor_cambio)}">Tasa: ${formatearCotizacion(m.valor_cambio < 1.0 ? 1.0 / m.valor_cambio : m.valor_cambio)}</div>
         </td>
         <td class="p-3">
           ${conceptoHtml}
@@ -1027,6 +1088,7 @@ async function cargarEditarMovimiento(idMovimiento) {
 
   state.editandoMovimientoId = idMovimiento;
 
+  document.getElementById('movFechaContable').value = mov.fecha_contable || '';
   document.getElementById('movCliente').value = mov.id_cliente || '';
   // Cargar cuentas del cliente primero
   const selectCta = document.getElementById('movCuenta');
@@ -1099,14 +1161,7 @@ async function refrescarEcommerceStock() {
   ecoMovs.forEach(m => {
     if (m.status_operacion === 'PENDIENTE') return;
     
-    let valorUSDT = m.monto;
-    if (m.moneda !== state.opciones.moneda_principal) {
-      if (m.moneda === 'PYG' || m.moneda === 'ARS') {
-        valorUSDT = m.monto / m.valor_cambio;
-      } else {
-        valorUSDT = m.monto * m.valor_cambio;
-      }
-    }
+    let valorUSDT = calcularMontoEquivalenteUSDT(m.monto, m.moneda, m.valor_cambio, m.par_cambio);
     if (m.tipo_transaccion === 'ECOMMERCE / COMPRA') {
       volCompra += valorUSDT;
       cantCompra++;
@@ -1152,14 +1207,7 @@ function dibujarTablaEcommerce(movs) {
   }
 
   movs.forEach(m => {
-    let equivalenteUSDT = m.monto;
-    if (m.moneda !== state.opciones.moneda_principal) {
-      if (m.moneda === 'PYG' || m.moneda === 'ARS') {
-        equivalenteUSDT = m.monto / m.valor_cambio;
-      } else {
-        equivalenteUSDT = m.monto * m.valor_cambio;
-      }
-    }
+    let equivalenteUSDT = calcularMontoEquivalenteUSDT(m.monto, m.moneda, m.valor_cambio, m.par_cambio);
     const esCompra = m.tipo_transaccion.includes('COMPRA');
     const tr = `
       <tr class="border-b border-slate-900 hover:bg-slate-900/30">
@@ -1212,56 +1260,100 @@ function triggerEcoProductoCostoAlert() {
 
 // --- Sub-Módulo de Administración de Productos (E-Commerce) ---
 let stateProductosEco = [];
+const selectedEcoProductIds = new Set();
+
+function dibujarTablaInventarioProductos() {
+  const tbody = document.getElementById('tablaInventarioProductos');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  const query = (document.getElementById('filtroInventarioBusqueda')?.value || '').toLowerCase().trim();
+  const filtroOferta = document.getElementById('filtroInventarioOferta')?.value || '';
+
+  const productosFiltrados = stateProductosEco.filter(p => {
+    // 1. Filtro de búsqueda por nombre o SKU
+    if (query) {
+      const nom = (p.nombre || '').toLowerCase();
+      const sku = (p.sku || '').toLowerCase();
+      if (!nom.includes(query) && !sku.includes(query)) return false;
+    }
+    // 2. Filtro rápido
+    if (filtroOferta === 'oferta' && p.es_oferta !== 1) return false;
+    if (filtroOferta === 'con_stock' && (p.stock || 0) <= 0) return false;
+    if (filtroOferta === 'seleccionados' && !selectedEcoProductIds.has(p.id_producto)) return false;
+
+    return true;
+  });
+
+  if (productosFiltrados.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-500">No se encontraron productos con los filtros aplicados.</td></tr>`;
+    return;
+  }
+
+  productosFiltrados.forEach(p => {
+    let equiv = p.monto_costo;
+    if (p.moneda_costo !== state.opciones.moneda_principal) {
+      equiv = p.monto_costo * p.cambio_costo;
+    }
+    const isChecked = selectedEcoProductIds.has(p.id_producto);
+    const tr = `
+      <tr class="border-b border-slate-900 hover:bg-slate-900/30">
+        <td class="p-3 text-center">
+          <input type="checkbox" class="chk-select-eco h-3.5 w-3.5 accent-indigo-650 bg-slate-900 border-slate-800 rounded cursor-pointer" 
+            data-id="${p.id_producto}" ${isChecked ? 'checked' : ''}>
+        </td>
+        <td class="p-3 font-mono font-semibold text-slate-400">${p.sku || '--'}</td>
+        <td class="p-3 font-bold text-slate-200">
+          ${p.nombre}
+          ${p.es_oferta === 1 ? '<span class="ml-1.5 bg-rose-600/20 text-rose-400 text-[9px] font-bold px-1.5 py-0.5 rounded border border-rose-500/20">OFERTA</span>' : ''}
+        </td>
+        <td class="p-3 text-right font-semibold text-teal-400">${p.stock} uds</td>
+        <td class="p-3 text-right font-bold text-slate-350">${formatearNumeroVisual(equiv)} ${state.opciones.moneda_principal}</td>
+        <td class="p-3 text-right font-bold text-indigo-400">${formatearNumeroVisual(p.precio_venta || 0.0)} USDT</td>
+        <td class="p-3 text-center flex justify-center gap-2">
+          <button onclick="cargarEditarEcoProducto(${p.id_producto})" class="text-indigo-400 hover:text-indigo-300 font-semibold text-[11px] hover:underline">Editar</button>
+          <button onclick="eliminarEcoProducto(${p.id_producto})" class="text-rose-500 hover:text-rose-455 font-semibold text-[11px] hover:underline">Borrar</button>
+        </td>
+      </tr>
+    `;
+    tbody.insertAdjacentHTML('beforeend', tr);
+  });
+
+  // Configurar listeners individuales de los checkboxes
+  tbody.querySelectorAll('.chk-select-eco').forEach(cb => {
+    cb.addEventListener('change', (e) => {
+      const id = parseInt(e.target.getAttribute('data-id'));
+      if (e.target.checked) {
+        selectedEcoProductIds.add(id);
+      } else {
+        selectedEcoProductIds.delete(id);
+      }
+      actualizarEstadoSelectAll();
+    });
+  });
+
+  actualizarEstadoSelectAll();
+}
+window.dibujarTablaInventarioProductos = dibujarTablaInventarioProductos;
+
+function actualizarEstadoSelectAll() {
+  const chkSelectAll = document.getElementById('chkSelectAllEco');
+  if (!chkSelectAll) return;
+  const checkboxes = document.querySelectorAll('.chk-select-eco');
+  if (checkboxes.length === 0) {
+    chkSelectAll.checked = false;
+    return;
+  }
+  const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+  chkSelectAll.checked = allChecked;
+}
 
 async function refrescarEcoProductos() {
   try {
     stateProductosEco = await window.api.ecommerceProductos.listar();
 
-    // 1. Dibujar tabla de productos
-    const tbody = document.getElementById('tablaInventarioProductos');
-    if (tbody) {
-      tbody.innerHTML = '';
-      if (stateProductosEco.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-500">No hay productos en inventario.</td></tr>`;
-      } else {
-        stateProductosEco.forEach(p => {
-          let equiv = p.monto_costo;
-          if (p.moneda_costo !== state.opciones.moneda_principal) {
-            equiv = p.monto_costo * p.cambio_costo;
-          }
-          const tr = `
-            <tr class="border-b border-slate-900 hover:bg-slate-900/30">
-              <td class="p-3 text-center">
-                <input type="checkbox" class="chk-select-eco h-3.5 w-3.5 accent-indigo-650 bg-slate-900 border-slate-800 rounded" data-id="${p.id_producto}">
-              </td>
-              <td class="p-3 font-mono font-semibold text-slate-400">${p.sku || '--'}</td>
-              <td class="p-3 font-bold text-slate-200">
-                ${p.nombre}
-                ${p.es_oferta === 1 ? '<span class="ml-1.5 bg-rose-600/20 text-rose-400 text-[9px] font-bold px-1.5 py-0.5 rounded border border-rose-500/20">OFERTA</span>' : ''}
-              </td>
-              <td class="p-3 text-right font-semibold text-teal-400">${p.stock} uds</td>
-              <td class="p-3 text-right font-bold text-slate-350">${formatearNumeroVisual(equiv)} ${state.opciones.moneda_principal}</td>
-              <td class="p-3 text-right font-bold text-indigo-400">${formatearNumeroVisual(p.precio_venta || 0.0)} USDT</td>
-              <td class="p-3 text-center flex justify-center gap-2">
-                <button onclick="cargarEditarEcoProducto(${p.id_producto})" class="text-indigo-400 hover:text-indigo-300 font-semibold text-[11px] hover:underline">Editar</button>
-                <button onclick="eliminarEcoProducto(${p.id_producto})" class="text-rose-500 hover:text-rose-455 font-semibold text-[11px] hover:underline">Borrar</button>
-              </td>
-            </tr>
-          `;
-          tbody.insertAdjacentHTML('beforeend', tr);
-        });
-
-        // Configurar listener para Select All
-        const chkSelectAll = document.getElementById('chkSelectAllEco');
-        if (chkSelectAll) {
-          chkSelectAll.checked = false;
-          chkSelectAll.addEventListener('change', () => {
-            const checkboxes = document.querySelectorAll('.chk-select-eco');
-            checkboxes.forEach(cb => cb.checked = chkSelectAll.checked);
-          });
-        }
-      }
-    }
+    // 1. Dibujar tabla
+    dibujarTablaInventarioProductos();
 
     // 2. Rellenar selectores de productos en Movimientos
     const selectEcoProd = document.getElementById('ecoProducto');
@@ -1319,6 +1411,7 @@ async function eliminarEcoProducto(id) {
   if (confirm('¿Está seguro de eliminar este producto? Se borrarán sus datos del catálogo (las transacciones históricas permanecerán).')) {
     try {
       await window.api.ecommerceProductos.eliminar(id);
+      selectedEcoProductIds.delete(id);
       await refrescarEcoProductos();
       await refrescarEcommerceStock();
     } catch (err) {
@@ -1493,14 +1586,7 @@ async function refrescarGastosPersonales() {
   }
 
   gastos.forEach(g => {
-    let equivalenteUSDT = g.monto;
-    if (g.moneda !== state.opciones.moneda_principal) {
-      if (g.moneda === 'PYG' || g.moneda === 'ARS') {
-        equivalenteUSDT = g.monto / g.valor_cambio;
-      } else {
-        equivalenteUSDT = g.monto * g.valor_cambio;
-      }
-    }
+    let equivalenteUSDT = calcularMontoEquivalenteUSDT(g.monto, g.moneda, g.valor_cambio, g.par_cambio);
 
     const esEgreso = g.tipo_transaccion === 'GASTO_PERSONAL';
     const classEquiv = esEgreso ? 'text-rose-500' : 'text-emerald-450';
@@ -1532,6 +1618,7 @@ async function cargarEditarGasto(idGasto) {
   if (!g) return;
 
   document.getElementById('gastoId').value = g.id_movimiento;
+  document.getElementById('gastoFechaContable').value = g.fecha_contable || '';
   document.getElementById('gastoTipoOperacion').value = g.tipo_transaccion;
   document.getElementById('gastoMonto').value = g.monto;
   document.getElementById('gastoMoneda').value = g.moneda;
@@ -1898,8 +1985,9 @@ function configurarFormularios() {
   document.getElementById('formMovimiento').addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    if (!state.fechaContableActiva) {
-      alert('Debe iniciar la jornada contable del día comercial antes de poder guardar movimientos.');
+    const fechaContable = document.getElementById('movFechaContable').value;
+    if (!fechaContable) {
+      alert('Debe seleccionar una fecha contable.');
       return;
     }
 
@@ -1915,7 +2003,7 @@ function configurarFormularios() {
       valor_cambio: parseFloat(document.getElementById('movValorCambio').value),
       concepto: document.getElementById('movConcepto').value,
       observaciones: document.getElementById('movObservaciones').value,
-      fecha_contable: state.fechaContableActiva,
+      fecha_contable: fechaContable,
       status_operacion: chkPendiente ? 'PENDIENTE' : 'LIQUIDADO',
       subcategoria_ocasional: document.getElementById('movSubcategoriaOcasional').value || null
     };
@@ -1951,6 +2039,7 @@ function configurarFormularios() {
         await window.api.movimientos.crear(mData, ecoData);
         alert('Movimiento registrado con éxito en base de datos.');
         document.getElementById('formMovimiento').reset();
+        document.getElementById('movFechaContable').value = new Date().toISOString().split('T')[0];
         document.getElementById('movSubcategoriaOcasionalContainer').classList.add('hidden');
         seccionEco.classList.add('hidden');
       }
@@ -1966,6 +2055,7 @@ function configurarFormularios() {
   document.getElementById('btnCancelarMovimiento').addEventListener('click', () => {
     state.editandoMovimientoId = null;
     document.getElementById('formMovimiento').reset();
+    document.getElementById('movFechaContable').value = new Date().toISOString().split('T')[0];
     document.getElementById('movSubcategoriaOcasionalContainer').classList.add('hidden');
     seccionEco.classList.add('hidden');
     document.getElementById('btnCancelarMovimiento').classList.add('hidden');
@@ -2174,8 +2264,9 @@ function configurarFormularios() {
   document.getElementById('formGastoPersonal').addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    if (!state.fechaContableActiva) {
-      alert('Debe iniciar la jornada contable comercial.');
+    const fechaContable = document.getElementById('gastoFechaContable').value;
+    if (!fechaContable) {
+      alert('Debe seleccionar una fecha contable.');
       return;
     }
 
@@ -2193,7 +2284,7 @@ function configurarFormularios() {
       valor_cambio: 1.0,
       concepto: document.getElementById('gastoConcepto').value,
       observaciones: document.getElementById('gastoObservaciones').value,
-      fecha_contable: state.fechaContableActiva
+      fecha_contable: fechaContable
     };
 
     // Calcular tasa automatica frente a la moneda principal del sistema
@@ -2215,6 +2306,7 @@ function configurarFormularios() {
         alert('Movimiento personal registrado.');
       }
       document.getElementById('formGastoPersonal').reset();
+      document.getElementById('gastoFechaContable').value = new Date().toISOString().split('T')[0];
       document.getElementById('gastoId').value = '';
       document.getElementById('gastoFormTitulo').textContent = 'Registrar Gasto';
       document.getElementById('btnCancelarGasto').classList.add('hidden');
@@ -2227,6 +2319,7 @@ function configurarFormularios() {
 
   document.getElementById('btnCancelarGasto').addEventListener('click', () => {
     document.getElementById('formGastoPersonal').reset();
+    document.getElementById('gastoFechaContable').value = new Date().toISOString().split('T')[0];
     document.getElementById('gastoId').value = '';
     document.getElementById('gastoFormTitulo').textContent = 'Registrar Gasto';
     document.getElementById('btnCancelarGasto').classList.add('hidden');
@@ -2236,17 +2329,30 @@ function configurarFormularios() {
   document.getElementById('formCambio').addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    if (!state.fechaContableActiva) {
-      alert('Debe iniciar la jornada contable del día comercial antes de fijar cotizaciones.');
+    const fechaContable = document.getElementById('cambioFechaContable').value;
+    if (!fechaContable) {
+      alert('Debe seleccionar una fecha contable.');
       return;
     }
 
     const idCambio = document.getElementById('cambioId').value;
+    const par = document.getElementById('cambioPar').value;
+    let valorCompra = parseFloat(document.getElementById('cambioCompra').value);
+    let valorVenta = parseFloat(document.getElementById('cambioVenta').value);
+
+    // Si es un par que se maneja de forma invertida en la UI,
+    // el usuario ingresó '7500', así que guardamos '1 / 7500' en la base de datos
+    const isInv = par.startsWith('PYG/') || par.startsWith('ARS/') || valorCompra > 10.0;
+    if (isInv) {
+      valorCompra = 1.0 / valorCompra;
+      valorVenta = 1.0 / valorVenta;
+    }
+
     const camData = {
-      fecha_contable: state.fechaContableActiva,
-      par_divisa: document.getElementById('cambioPar').value,
-      valor_compra: parseFloat(document.getElementById('cambioCompra').value),
-      valor_venta: parseFloat(document.getElementById('cambioVenta').value)
+      fecha_contable: fechaContable,
+      par_divisa: par,
+      valor_compra: valorCompra,
+      valor_venta: valorVenta
     };
 
     if (idCambio) {
@@ -2259,6 +2365,7 @@ function configurarFormularios() {
     }
 
     document.getElementById('formCambio').reset();
+    document.getElementById('cambioFechaContable').value = new Date().toISOString().split('T')[0];
     document.getElementById('cambioId').value = '';
     document.getElementById('btnCancelarCambio').classList.add('hidden');
     document.getElementById('btnGuardarCambio').textContent = 'Guardar Cotización';
@@ -2268,6 +2375,7 @@ function configurarFormularios() {
 
   document.getElementById('btnCancelarCambio').addEventListener('click', () => {
     document.getElementById('formCambio').reset();
+    document.getElementById('cambioFechaContable').value = new Date().toISOString().split('T')[0];
     document.getElementById('cambioId').value = '';
     document.getElementById('btnCancelarCambio').classList.add('hidden');
     document.getElementById('btnGuardarCambio').textContent = 'Guardar Cotización';
@@ -2278,8 +2386,9 @@ function configurarFormularios() {
     const par = e.target.value;
     const lastRate = state.cambios.find(c => c.par_divisa === par);
     if (lastRate) {
-      document.getElementById('cambioCompra').value = lastRate.valor_compra;
-      document.getElementById('cambioVenta').value = lastRate.valor_venta;
+      const isInv = par.startsWith('PYG/') || par.startsWith('ARS/') || lastRate.valor_compra < 1.0;
+      document.getElementById('cambioCompra').value = isInv ? (1.0 / lastRate.valor_compra) : lastRate.valor_compra;
+      document.getElementById('cambioVenta').value = isInv ? (1.0 / lastRate.valor_venta) : lastRate.valor_venta;
     } else {
       document.getElementById('cambioCompra').value = '';
       document.getElementById('cambioVenta').value = '';
@@ -2730,6 +2839,37 @@ function configurarFormularios() {
     });
   }
 
+  // --- Filtros Catálogo E-Commerce ---
+  const filtroInvBus = document.getElementById('filtroInventarioBusqueda');
+  const filtroInvOf = document.getElementById('filtroInventarioOferta');
+  if (filtroInvBus) {
+    filtroInvBus.addEventListener('input', () => {
+      dibujarTablaInventarioProductos();
+    });
+  }
+  if (filtroInvOf) {
+    filtroInvOf.addEventListener('change', () => {
+      dibujarTablaInventarioProductos();
+    });
+  }
+
+  // --- Select All Catálogo E-Commerce ---
+  const chkSelectAllEco = document.getElementById('chkSelectAllEco');
+  if (chkSelectAllEco) {
+    chkSelectAllEco.addEventListener('change', () => {
+      const checkboxes = document.querySelectorAll('.chk-select-eco');
+      checkboxes.forEach(cb => {
+        const id = parseInt(cb.getAttribute('data-id'));
+        cb.checked = chkSelectAllEco.checked;
+        if (chkSelectAllEco.checked) {
+          selectedEcoProductIds.add(id);
+        } else {
+          selectedEcoProductIds.delete(id);
+        }
+      });
+    });
+  }
+
   // --- Formulario Productos E-Commerce (CRUD) ---
   const formEcoProd = document.getElementById('formEcoProducto');
   if (formEcoProd) {
@@ -2816,8 +2956,7 @@ function configurarFormularios() {
 
   if (btnDescargarCat) {
     btnDescargarCat.addEventListener('click', async () => {
-      const chkSelected = document.querySelectorAll('.chk-select-eco:checked');
-      let selectedIds = Array.from(chkSelected).map(cb => parseInt(cb.getAttribute('data-id')));
+      let selectedIds = Array.from(selectedEcoProductIds);
       
       if (selectedIds.length === 0) {
         selectedIds = stateProductosEco.map(p => p.id_producto);
@@ -3097,14 +3236,7 @@ async function actualizarDashboard() {
     const esVenta = m.tipo_transaccion.includes('VENTA');
     const esAjuste = m.tipo_transaccion === 'AJUSTE';
 
-    let valorUSDT = m.monto;
-    if (m.moneda !== state.opciones.moneda_principal) {
-      if (m.moneda === 'PYG' || m.moneda === 'ARS') {
-        valorUSDT = m.monto / m.valor_cambio;
-      } else {
-        valorUSDT = m.monto * m.valor_cambio;
-      }
-    }
+    let valorUSDT = calcularMontoEquivalenteUSDT(m.monto, m.moneda, m.valor_cambio, m.par_cambio);
 
     if (m.status_operacion === 'PENDIENTE') {
       todosPendientes.push(m);
@@ -3304,13 +3436,7 @@ function dibujarGraficoFinanciero(movimientos) {
   const chartWidth = canvas.width - padding * 2;
   const chartHeight = canvas.height - padding * 2;
 
-  const valores = ultimos.map(m => {
-    let val = m.monto;
-    if (m.moneda !== state.opciones.moneda_principal) {
-      val = (m.moneda === 'PYG' || m.moneda === 'ARS') ? m.monto / m.valor_cambio : m.monto * m.valor_cambio;
-    }
-    return val;
-  });
+  const valores = ultimos.map(m => calcularMontoEquivalenteUSDT(m.monto, m.moneda, m.valor_cambio, m.par_cambio));
 
   const maxVal = Math.max(...valores, 100);
   const minVal = Math.min(...valores, 0);
@@ -3334,10 +3460,7 @@ function dibujarGraficoFinanciero(movimientos) {
 
   const points = ultimos.map((m, idx) => {
     const x = padding + (chartWidth / (ultimos.length - 1 || 1)) * idx;
-    let val = m.monto;
-    if (m.moneda !== state.opciones.moneda_principal) {
-      val = (m.moneda === 'PYG' || m.moneda === 'ARS') ? m.monto / m.valor_cambio : m.monto * m.valor_cambio;
-    }
+    let val = calcularMontoEquivalenteUSDT(m.monto, m.moneda, m.valor_cambio, m.par_cambio);
     const y = padding + chartHeight - ((val - minVal) / valRange) * chartHeight;
     return { x, y, label: `#${m.id_movimiento}`, isVenta: m.tipo_transaccion.includes('VENTA') };
   });
@@ -3797,6 +3920,32 @@ async function configurarAjustesYCalculadora() {
     updateCalcUI();
   };
 
+  window.calcBackspace = function() {
+    if (calcState.evaluated) {
+      calcState.expression = '';
+      calcState.displayValue = '0';
+      calcState.evaluated = false;
+    } else {
+      calcState.expression = calcState.expression.slice(0, -1);
+      calcState.displayValue = calcState.expression || '0';
+    }
+    updateCalcUI();
+  };
+
+  window.calcPercentage = function() {
+    if (calcState.evaluated) {
+      calcState.expression = (parseFloat(calcState.displayValue) / 100).toString();
+      calcState.displayValue = calcState.expression;
+      calcState.evaluated = false;
+    } else {
+      if (calcState.expression !== '') {
+        calcState.expression += "*0.01";
+        calcState.displayValue = calcState.expression;
+      }
+    }
+    updateCalcUI();
+  };
+
   window.calcInput = function(char) {
     if (calcState.evaluated) {
       if (/[0-9.(]/.test(char)) {
@@ -4209,16 +4358,28 @@ const groundingLoading = document.getElementById('aiGroundingLoading');
 const groundingResults = document.getElementById('aiGroundingResults');
 
 window.buscarImagenIA = async (idx) => {
-  groundingTargetRowIndex = idx;
-  const p = stateAIImportProducts[idx];
-  if (!p) return;
+  let queryProducto = "";
+  if (idx === 'product_form') {
+    const nombreProd = document.getElementById('ecoProductoNombre').value.trim();
+    if (!nombreProd) {
+      alert('Por favor, ingrese un nombre de producto antes de buscar su imagen con IA.');
+      return;
+    }
+    queryProducto = nombreProd;
+    groundingTargetRowIndex = 'product_form';
+  } else {
+    groundingTargetRowIndex = idx;
+    const p = stateAIImportProducts[idx];
+    if (!p) return;
+    queryProducto = p.producto;
+  }
 
   groundingModal.classList.remove('hidden');
   groundingLoading.classList.remove('hidden');
   groundingResults.innerHTML = '';
 
   try {
-    const res = await window.api.ai.buscarImagenes(p.producto);
+    const res = await window.api.ai.buscarImagenes(queryProducto);
     const imagenes = res.imagenes || [];
     
     groundingLoading.classList.add('hidden');
@@ -4272,7 +4433,15 @@ window.seleccionarImagenDeGrounding = async (url, cardIdx) => {
   try {
     const fileName = await window.api.ai.descargarImagen(url);
     const idx = groundingTargetRowIndex;
-    if (idx !== null && stateAIImportProducts[idx]) {
+    if (idx === 'product_form') {
+      document.getElementById('ecoProductoImagen').value = fileName;
+      const previewImg = document.getElementById('ecoProductoImagenPreview');
+      const previewContainer = document.getElementById('ecoProductoImagenPreviewContainer');
+      if (previewImg && previewContainer) {
+        previewImg.src = `../../assets/img/products/${fileName}`;
+        previewContainer.classList.remove('hidden');
+      }
+    } else if (idx !== null && stateAIImportProducts[idx]) {
       stateAIImportProducts[idx].imagen = fileName;
       const imgHidden = document.getElementById(`enrichImgVal_${idx}`);
       const imgEl = document.getElementById(`enrichPreview_${idx}`);
